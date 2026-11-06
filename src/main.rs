@@ -51,7 +51,7 @@ fn main() -> eframe::Result<()> {
                     viewport: egui::ViewportBuilder::default()
                         .with_decorations(false)
                         .with_transparent(true)
-                        .with_inner_size(egui::vec2(460.0, 100.0)),
+                        .with_inner_size(egui::vec2(app::NORMAL_WINDOW_WIDTH, app::NORMAL_WINDOW_HEIGHT)),
                     ..Default::default()
                 };
                 return eframe::run_native(
@@ -71,7 +71,7 @@ fn main() -> eframe::Result<()> {
                     viewport: egui::ViewportBuilder::default()
                         .with_decorations(false)
                         .with_transparent(true)
-                        .with_inner_size(egui::vec2(460.0, 45.0)),
+                        .with_inner_size(egui::vec2(app::TICKER_WINDOW_WIDTH, app::TICKER_WINDOW_HEIGHT)),
                     ..Default::default()
                 };
                 return eframe::run_native(
@@ -86,7 +86,7 @@ fn main() -> eframe::Result<()> {
                     viewport: egui::ViewportBuilder::default()
                         .with_decorations(false)
                         .with_transparent(true)
-                        .with_inner_size(egui::vec2(460.0, 100.0)),
+                        .with_inner_size(egui::vec2(app::NORMAL_WINDOW_WIDTH, app::NORMAL_WINDOW_HEIGHT)),
                     ..Default::default()
                 };
                 return eframe::run_native(
@@ -141,11 +141,11 @@ fn main() -> eframe::Result<()> {
         .with_decorations(false)
         .with_transparent(true)
         .with_inner_size(if s.ticker_mode {
-            egui::vec2(460.0, 45.0)
+            egui::vec2(app::TICKER_WINDOW_WIDTH, app::TICKER_WINDOW_HEIGHT)
         } else {
-            egui::vec2(460.0, 100.0)
+            egui::vec2(app::NORMAL_WINDOW_WIDTH, app::NORMAL_WINDOW_HEIGHT)
         })
-        .with_min_inner_size(egui::vec2(320.0, 40.0));
+        .with_min_inner_size(egui::vec2(app::MIN_WINDOW_WIDTH, app::MIN_WINDOW_HEIGHT));
     if let Some(icon) = app_icon() {
         viewport = viewport.with_icon(icon);
     }

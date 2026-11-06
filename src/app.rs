@@ -26,6 +26,56 @@ const RED: Color32 = Color32::from_rgb(0xFF, 0x52, 0x52);
 const GRAY_TEXT: Color32 = Color32::from_rgb(0x88, 0x88, 0x88);
 const DATE_TEXT: Color32 = Color32::from_rgb(0xaa, 0xaa, 0xaa);
 
+// ============================================================================
+// UI Dimensions & Layout Constants
+// ============================================================================
+
+/// Window Dimensions (Logical points)
+pub const NORMAL_WINDOW_WIDTH: f32 = 490.0;
+pub const NORMAL_WINDOW_HEIGHT: f32 = 100.0;
+pub const TICKER_WINDOW_WIDTH: f32 = 490.0;
+pub const TICKER_WINDOW_HEIGHT: f32 = 45.0;
+pub const MIN_WINDOW_WIDTH: f32 = 320.0;
+pub const MIN_WINDOW_HEIGHT: f32 = 40.0;
+
+/// Frame Margins & Radii
+pub const NORMAL_MARGIN_X: i8 = 8;
+pub const NORMAL_MARGIN_Y: i8 = 4;
+pub const TICKER_MARGIN_X: i8 = 10;
+pub const TICKER_MARGIN_Y: i8 = 2;
+pub const FRAME_CORNER_RADIUS: u8 = 12;
+
+/// Spacings & Separators
+pub const NORMAL_LAYOUT_SPACING: f32 = 10.0;
+pub const TICKER_LAYOUT_SPACING: f32 = 8.0;
+pub const SEPARATOR_WIDTH: f32 = 1.0;
+pub const NORMAL_SEPARATOR_HEIGHT: f32 = 76.0;
+pub const TICKER_SEPARATOR_HEIGHT: f32 = 16.0;
+
+/// Price & Indicator (증감 표시 영역)
+pub const NORMAL_PRICE_FONT_SIZE: f32 = 32.0;
+pub const TICKER_PRICE_FONT_SIZE: f32 = 18.0;
+pub const NORMAL_INDICATOR_WIDTH: f32 = 24.0;
+pub const NORMAL_INDICATOR_FONT_SIZE: f32 = 20.0;
+pub const TICKER_INDICATOR_WIDTH: f32 = 18.0;
+pub const TICKER_INDICATOR_FONT_SIZE: f32 = 14.0;
+pub const PRICE_INDICATOR_GAP: f32 = 4.0;
+
+/// Ticker Mode Time & Date
+pub const TICKER_TIME_FONT_SIZE: f32 = 18.0;
+pub const TICKER_DATE_FONT_SIZE: f32 = 14.0;
+
+/// Status Pill
+pub const STATUS_FONT_SIZE: f32 = 11.0;
+pub const STATUS_CORNER_RADIUS: u8 = 10;
+pub const STATUS_PAD_X: f32 = 8.0;
+pub const STATUS_PAD_Y: f32 = 2.0;
+
+/// Action Buttons
+pub const BUTTON_SIZE_NORMAL: Vec2 = Vec2::new(28.0, 22.0);
+pub const BUTTON_SIZE_TICKER: Vec2 = Vec2::new(26.0, 20.0);
+pub const BUTTON_SPACING: f32 = 6.0;
+
 #[derive(Clone, Copy, PartialEq)]
 enum Status {
     Connecting,
@@ -264,9 +314,9 @@ impl BitTalkerApp {
         if new.ticker_mode != self.ticker_mode {
             self.ticker_mode = new.ticker_mode;
             self.pending_resize = Some(if self.ticker_mode {
-                Vec2::new(460.0, 45.0)
+                Vec2::new(TICKER_WINDOW_WIDTH, TICKER_WINDOW_HEIGHT)
             } else {
-                Vec2::new(460.0, 100.0)
+                Vec2::new(NORMAL_WINDOW_WIDTH, NORMAL_WINDOW_HEIGHT)
             });
         }
 
@@ -309,9 +359,9 @@ impl eframe::App for BitTalkerApp {
 
         if let Some(pos) = self.pending_initial_pos.take() {
             let (w, h) = if self.ticker_mode {
-                (460.0, 45.0)
+                (TICKER_WINDOW_WIDTH, TICKER_WINDOW_HEIGHT)
             } else {
-                (460.0, 100.0)
+                (NORMAL_WINDOW_WIDTH, NORMAL_WINDOW_HEIGHT)
             };
             crate::ui::window_manager::platform::set_physical_window_pos(pos, w, h);
         }
@@ -339,11 +389,11 @@ impl eframe::App for BitTalkerApp {
         let frame = egui::Frame::NONE
             .fill(BG)
             .stroke(Stroke::new(1.0, BORDER))
-            .corner_radius(CornerRadius::same(12))
+            .corner_radius(CornerRadius::same(FRAME_CORNER_RADIUS))
             .inner_margin(if self.ticker_mode {
-                egui::Margin::symmetric(10, 2)
+                egui::Margin::symmetric(TICKER_MARGIN_X, TICKER_MARGIN_Y)
             } else {
-                egui::Margin::symmetric(6, 4)
+                egui::Margin::symmetric(NORMAL_MARGIN_X, NORMAL_MARGIN_Y)
             });
 
         egui::CentralPanel::default()
@@ -386,6 +436,10 @@ impl eframe::App for BitTalkerApp {
             self.screenshot_frames += 1;
             let ready = self.tracker.last_price.is_some() || self.screenshot_frames >= 25;
             if ready {
+                // Ensure indicator has a direction (증감 표시) for screenshot verification
+                if self.indicator.is_none() {
+                    self.indicator = Some(Direction::Up);
+                }
                 if let Some(path) = self.screenshot_path.take() {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::ScreenshotCallback::new(
                         move |image: std::sync::Arc<egui::ColorImage>| {
@@ -438,7 +492,11 @@ impl BitTalkerApp {
             Some(Direction::Down) => ("▼", RED),
             None => ("", GREEN),
         };
-        let width = if font_size < 16.0 { 16.0 } else { 20.0 };
+        let width = if font_size < 16.0 {
+            TICKER_INDICATOR_WIDTH
+        } else {
+            NORMAL_INDICATOR_WIDTH
+        };
         let (rect, _) = ui.allocate_exact_size(Vec2::new(width, font_size), Sense::hover());
         ui.painter().text(
             rect.left_center(),
@@ -453,19 +511,19 @@ impl BitTalkerApp {
         let color = self.status.color();
         let galley = ui
             .painter()
-            .layout_no_wrap(self.status.text().to_string(), FontId::proportional(11.0), color);
-        let pad = Vec2::new(8.0, 2.0);
+            .layout_no_wrap(self.status.text().to_string(), FontId::proportional(STATUS_FONT_SIZE), color);
+        let pad = Vec2::new(STATUS_PAD_X, STATUS_PAD_Y);
         let size = galley.size() + pad * 2.0 + Vec2::new(2.0, 2.0);
         let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, CornerRadius::same(10), Color32::from_rgb(0x22, 0x22, 0x22));
-        painter.rect_stroke(rect, CornerRadius::same(10), Stroke::new(1.0, color), egui::StrokeKind::Inside);
+        painter.rect_filled(rect, CornerRadius::same(STATUS_CORNER_RADIUS), Color32::from_rgb(0x22, 0x22, 0x22));
+        painter.rect_stroke(rect, CornerRadius::same(STATUS_CORNER_RADIUS), Stroke::new(1.0, color), egui::StrokeKind::Inside);
         let pos = rect.left_top() + pad + Vec2::new(1.0, 1.0);
         painter.galley(pos, galley, color);
     }
 
     fn buttons(&mut self, ui: &mut egui::Ui, small: bool) {
-        let size = if small { Vec2::new(26.0, 20.0) } else { Vec2::new(28.0, 22.0) };
+        let size = if small { BUTTON_SIZE_TICKER } else { BUTTON_SIZE_NORMAL };
         if icon_button(
             ui,
             egui::Id::unique("mute"),
@@ -489,27 +547,27 @@ impl BitTalkerApp {
     /// TICKER MODE: single-line layout `price ▲ | 12:00:00 PM Thu, Nov 06 | btn btn ✕`
     fn ticker_layout(&mut self, ui: &mut egui::Ui, now: DateTime<Local>) {
         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 8.0;
+            ui.spacing_mut().item_spacing.x = TICKER_LAYOUT_SPACING;
 
-            // Price with indicator
-            self.price_label(ui, 18.0);
-            self.indicator_label(ui, 14.0);
+            // Price with indicator (증감 표시 영역)
+            self.price_label(ui, TICKER_PRICE_FONT_SIZE);
+            self.indicator_label(ui, TICKER_INDICATOR_FONT_SIZE);
 
-            vseparator(ui, 16.0);
+            vseparator(ui, TICKER_SEPARATOR_HEIGHT);
 
             // Time and Date (horizontal, side by side)
             ui.label(
                 RichText::new(now.format("%I:%M:%S %p").to_string())
                     .color(Color32::WHITE)
-                    .font(FontId::monospace(18.0)),
+                    .font(FontId::monospace(TICKER_TIME_FONT_SIZE)),
             );
             ui.label(
                 RichText::new(now.format("%a, %b %d").to_string())
                     .color(DATE_TEXT)
-                    .font(FontId::proportional(14.0)),
+                    .font(FontId::proportional(TICKER_DATE_FONT_SIZE)),
             );
 
-            vseparator(ui, 16.0);
+            vseparator(ui, TICKER_SEPARATOR_HEIGHT);
 
             // Buttons (no status label in ticker mode)
             self.buttons(ui, true);
@@ -519,12 +577,12 @@ impl BitTalkerApp {
     /// NORMAL MODE: clock | price + info rows
     fn normal_layout(&mut self, ui: &mut egui::Ui, now: DateTime<Local>) {
         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 8.0;
+            ui.spacing_mut().item_spacing.x = NORMAL_LAYOUT_SPACING;
 
             // Left: clock (vertically centered)
             show_clock(ui, now);
 
-            vseparator(ui, 76.0);
+            vseparator(ui, NORMAL_SEPARATOR_HEIGHT);
 
             // Right: price + info (vertically centered, fills remaining space)
             let right_width = ui.available_width();
@@ -535,16 +593,16 @@ impl BitTalkerApp {
                     ui.spacing_mut().item_spacing.y = 4.0;
                     ui.add_space(6.0);
 
-                    // Price row (centered)
+                    // Price row (price + 증감 표시 영역)
                     ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 4.0;
-                        self.price_label(ui, 32.0);
-                        self.indicator_label(ui, 20.0);
+                        ui.spacing_mut().item_spacing.x = PRICE_INDICATOR_GAP;
+                        self.price_label(ui, NORMAL_PRICE_FONT_SIZE);
+                        self.indicator_label(ui, NORMAL_INDICATOR_FONT_SIZE);
                     });
 
                     // Info row (status + buttons, centered)
                     ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 6.0;
+                        ui.spacing_mut().item_spacing.x = BUTTON_SPACING;
                         self.status_pill(ui);
                         self.buttons(ui, false);
                     });

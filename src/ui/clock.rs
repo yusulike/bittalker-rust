@@ -9,17 +9,22 @@ const PANEL_BORDER: Color32 = Color32::from_rgb(0x33, 0x33, 0x33);
 const DATE_TEXT: Color32 = Color32::from_rgb(0x88, 0x88, 0x88);
 const SUFFIX_TEXT: Color32 = Color32::from_rgb(0xaa, 0xaa, 0xaa);
 
+pub const PANEL_SIZE: f32 = 64.0;
+pub const PANEL_GAP: f32 = 8.0;
+pub const AMPM_WIDTH: f32 = 36.0;
+pub const CLOCK_WIDTH: f32 = (PANEL_SIZE * 3.0) + (PANEL_GAP * 2.0) + AMPM_WIDTH; // 244.0
+pub const CLOCK_HEIGHT: f32 = 82.0;
+
 pub fn show_clock(ui: &mut Ui, now: DateTime<Local>) {
-    let clock_width = (64.0 * 3.0) + (8.0 * 2.0) + 36.0; // 3 panels + 2 spacings + AM/PM
     ui.allocate_ui_with_layout(
-        Vec2::new(clock_width, 82.0),
+        Vec2::new(CLOCK_WIDTH, CLOCK_HEIGHT),
         egui::Layout::top_down(egui::Align::Center),
         |ui| {
             ui.spacing_mut().item_spacing.y = 3.0;
 
             // --- time row ---
             ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = 8.0;
+                ui.spacing_mut().item_spacing.x = PANEL_GAP;
 
                 let (h, ampm) = format12h(now);
                 digit_panel(ui, &h, "H");
@@ -28,7 +33,7 @@ pub fn show_clock(ui: &mut Ui, now: DateTime<Local>) {
 
                 // AM/PM (centered vertically relative to the 64px panels)
                 ui.allocate_ui_with_layout(
-                    Vec2::new(30.0, 64.0),
+                    Vec2::new(30.0, PANEL_SIZE),
                     egui::Layout::left_to_right(egui::Align::Center),
                     |ui| {
                         ui.label(
