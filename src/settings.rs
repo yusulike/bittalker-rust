@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 pub const DEFAULT_INTERVAL: i64 = 50;
 pub const DEFAULT_VOICE: &str = "F1";
 pub const DEFAULT_LANGUAGE: &str = "Korean";
+pub const DEFAULT_WEATHER_LOCATION: &str = "";
 
 /// Language code mapping (shared constant in the original).
 pub const LANG_CODE_MAP: &[(&str, &str)] = &[
@@ -58,6 +59,9 @@ pub struct Settings {
     /// Saved window position [x, y] in screen points (multi-monitor aware)
     #[serde(default)]
     pub window_pos: Option<[f32; 2]>,
+    /// Weather location query (city name or empty for auto-detect by IP)
+    #[serde(default = "default_weather_location")]
+    pub weather_location: String,
 }
 
 fn default_interval() -> i64 {
@@ -78,6 +82,9 @@ fn default_muted() -> bool {
 fn default_ticker_mode() -> bool {
     false
 }
+fn default_weather_location() -> String {
+    DEFAULT_WEATHER_LOCATION.to_string()
+}
 
 impl Default for Settings {
     fn default() -> Self {
@@ -89,6 +96,7 @@ impl Default for Settings {
             muted: false,
             ticker_mode: false,
             window_pos: None,
+            weather_location: DEFAULT_WEATHER_LOCATION.to_string(),
         }
     }
 }
@@ -187,6 +195,7 @@ mod tests {
         let m = SettingsManager::new(path.clone());
         assert_eq!(m.get().interval, 123);
         assert_eq!(m.get().voice, "F1");
+        assert_eq!(m.get().weather_location, "");
         assert!(!m.get().muted);
         let _ = std::fs::remove_file(path);
     }

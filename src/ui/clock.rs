@@ -1,8 +1,11 @@
 //! Flip-clock widget. Port of `src/ui/clock_widget.py`: three 64x64 digit
 //! panels (H/M/S with suffix letters), an AM/PM label and a date row.
 
-use chrono::{DateTime, Local, Datelike, Timelike};
+use chrono::{DateTime, Datelike, Local, Timelike};
 use egui::{Color32, CornerRadius, FontId, RichText, Sense, Stroke, StrokeKind, Ui, Vec2};
+
+use crate::core::weather::WeatherInfo;
+use crate::ui::icons::draw_weather_icon;
 
 const PANEL_BG: Color32 = Color32::from_rgb(0x25, 0x25, 0x25);
 const PANEL_BORDER: Color32 = Color32::from_rgb(0x33, 0x33, 0x33);
@@ -14,13 +17,22 @@ pub const PANEL_GAP: f32 = 8.0;
 pub const AMPM_WIDTH: f32 = 36.0;
 pub const CLOCK_WIDTH: f32 = (PANEL_SIZE * 3.0) + (PANEL_GAP * 2.0) + AMPM_WIDTH; // 244.0
 pub const CLOCK_HEIGHT: f32 = 82.0;
+pub const CLOCK_ROW_GAP_Y: f32 = 5.0;
 
-pub fn show_clock(ui: &mut Ui, now: DateTime<Local>) {
+/// Side Column (AM/PM + Weather) Layout
+pub const SIDE_COLUMN_TOP_PAD: f32 = 7.0; // 상단 여백 (값을 늘리면 전체가 아래로 내려옵니다)
+pub const SIDE_COLUMN_ROW_GAP: f32 = 6.0; // AM/PM - 날씨 아이콘 - 기온 사이의 수직 간격
+pub const SIDE_COLUMN_FALLBACK_PAD: f32 = 24.0; // 날씨 데이터가 없을 때 AM/PM 상단 여백
+pub const WEATHER_ICON_SIZE: f32 = 16.0; // 날씨 아이콘 크기
+pub const AMPM_FONT_SIZE: f32 = 14.0; // AM/PM 폰트 크기
+pub const TEMP_FONT_SIZE: f32 = 12.0; // 기온 폰트 크기
+
+pub fn show_clock(ui: &mut Ui, now: DateTime<Local>, weather: Option<&WeatherInfo>) {
     ui.allocate_ui_with_layout(
         Vec2::new(CLOCK_WIDTH, CLOCK_HEIGHT),
         egui::Layout::top_down(egui::Align::Center),
         |ui| {
-            ui.spacing_mut().item_spacing.y = 3.0;
+            ui.spacing_mut().item_spacing.y = CLOCK_ROW_GAP_Y;
 
             // --- time row ---
             ui.horizontal(|ui| {
@@ -31,20 +43,55 @@ pub fn show_clock(ui: &mut Ui, now: DateTime<Local>) {
                 digit_panel(ui, &now.format("%M").to_string(), "M");
                 digit_panel(ui, &now.format("%S").to_string(), "S");
 
-                // AM/PM (centered vertically relative to the 64px panels)
+                // Side column: AM/PM + Weather Icon + Temperature (3 rows)
                 ui.allocate_ui_with_layout(
-                    Vec2::new(30.0, PANEL_SIZE),
-                    egui::Layout::left_to_right(egui::Align::Center),
+                    Vec2::new(AMPM_WIDTH, PANEL_SIZE),
+                    egui::Layout::top_down(egui::Align::Center),
                     |ui| {
+                        if weather.is_some() {
+                            ui.add_space(SIDE_COLUMN_TOP_PAD);
+                            ui.spacing_mut().item_spacing.y = SIDE_COLUMN_ROW_GAP;
+                        } else {
+                            ui.add_space(SIDE_COLUMN_FALLBACK_PAD);
+                        }
+
+                        // Row 1: AM / PM
                         ui.add(
                             egui::Label::new(
                                 RichText::new(ampm)
                                     .color(Color32::WHITE)
-                                    .font(FontId::proportional(14.0))
+                                    .font(FontId::proportional(AMPM_FONT_SIZE))
                                     .strong(),
                             )
                             .selectable(false),
                         );
+
+                        // Row 2 & 3: Weather Icon & Temperature
+                        if let Some(w) = weather {
+                            let tooltip_text = format!(
+                                "{}: {} ({:.1}°C)",
+                                w.location_name,
+                                w.condition.description(),
+                                w.temperature
+                            );
+
+                            let (rect, resp) = ui.allocate_exact_size(
+                                Vec2::splat(WEATHER_ICON_SIZE),
+                                Sense::hover(),
+                            );
+                            draw_weather_icon(&ui.painter_at(rect), rect, w.condition);
+
+                            let temp_resp = ui.add(
+                                egui::Label::new(
+                                    RichText::new(format!("{:.0}°C", w.temperature))
+                                        .color(DATE_TEXT)
+                                        .font(FontId::proportional(TEMP_FONT_SIZE)),
+                                )
+                                .selectable(false),
+                            );
+
+                            resp.union(temp_resp).on_hover_text(tooltip_text);
+                        }
                     },
                 );
             });
@@ -87,7 +134,7 @@ fn digit_panel(ui: &mut Ui, digit: &str, suffix: &str) {
         rect.center(),
         egui::Align2::CENTER_CENTER,
         digit,
-        FontId::proportional(29.0),
+        FontId::proportional(44.0),
         Color32::WHITE,
     );
 
@@ -108,5 +155,8 @@ pub fn format12h(now: DateTime<Local>) -> (String, String) {
     if h == 0 {
         h = 12;
     }
-    (format!("{h:02}"), if is_pm { "PM" } else { "AM" }.to_string())
+    (
+        format!("{h:02}"),
+        if is_pm { "PM" } else { "AM" }.to_string(),
+    )
 }

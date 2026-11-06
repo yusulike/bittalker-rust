@@ -9,7 +9,7 @@ use egui::{Color32, ComboBox, Frame, Key, Margin, Ui, ViewportBuilder, ViewportI
 use crate::settings::{available_languages, Settings, VOICES};
 
 pub const DIALOG_WIDTH: f32 = 330.0;
-pub const DIALOG_HEIGHT: f32 = 345.0;
+pub const DIALOG_HEIGHT: f32 = 375.0;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum AssetDownloadStatus {
@@ -32,6 +32,7 @@ pub struct SettingsDialog {
     pub voice: String,
     pub always_on_top: bool,
     pub ticker_mode: bool,
+    pub weather_location: String,
     pub initial_pos: Option<[f32; 2]>,
     pub download_status: Arc<Mutex<AssetDownloadStatus>>,
 }
@@ -63,6 +64,7 @@ impl SettingsDialog {
             voice: current.voice.clone(),
             always_on_top: current.always_on_top,
             ticker_mode: current.ticker_mode,
+            weather_location: current.weather_location.clone(),
             initial_pos,
             download_status: shared_download
                 .unwrap_or_else(|| Arc::new(Mutex::new(AssetDownloadStatus::Idle))),
@@ -78,6 +80,7 @@ impl SettingsDialog {
             muted: false, // filled in by the caller from live state
             ticker_mode: self.ticker_mode,
             window_pos: None,
+            weather_location: self.weather_location.trim().to_string(),
         }
     }
 
@@ -187,6 +190,14 @@ impl SettingsDialog {
 
                 ui.label("Ticker Mode:");
                 ui.checkbox(&mut self.ticker_mode, "Enabled");
+                ui.end_row();
+
+                ui.label("Weather Location:");
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.weather_location)
+                        .hint_text("Auto (IP based)")
+                        .desired_width(135.0),
+                );
                 ui.end_row();
             });
 
@@ -347,6 +358,7 @@ mod tests {
             muted: true,
             ticker_mode: true,
             window_pos: None,
+            weather_location: "Seoul".to_string(),
         };
 
         let mut dialog = SettingsDialog::open(&original, None);
@@ -356,6 +368,7 @@ mod tests {
         assert_eq!(dialog.language, "English");
         assert!(!dialog.always_on_top);
         assert!(dialog.ticker_mode);
+        assert_eq!(dialog.weather_location, "Seoul");
 
         // Modify in dialog
         dialog.interval = 250;
@@ -363,6 +376,7 @@ mod tests {
         dialog.language = "Korean".to_string();
         dialog.always_on_top = true;
         dialog.ticker_mode = false;
+        dialog.weather_location = "Tokyo".to_string();
 
         let mut draft = dialog.draft();
         draft.muted = original.muted; // Caller preserves live muted state
@@ -372,6 +386,7 @@ mod tests {
         assert_eq!(draft.language, "Korean");
         assert!(draft.always_on_top);
         assert!(!draft.ticker_mode);
+        assert_eq!(draft.weather_location, "Tokyo");
         assert!(draft.muted);
     }
 

@@ -26,6 +26,11 @@ This repository is a pure Rust port designed to replace the original Python (PyQ
   - Flip-clock card design showing Hours, Minutes, Seconds, AM/PM, and full date.
   - Live real-time clock updates in both Normal and Compact Ticker modes.
   - Pleasant hourly audio chime on every hour.
+- **Local Weather & Temperature Widget**:
+  - Automatic IP-based geolocation or custom city name via settings.
+  - Powered by free Open-Meteo weather and geocoding APIs (no API key required).
+  - Handcrafted vector weather icons (sun, cloud, rain, snow, thunder, fog) rendered crisply regardless of installed fonts.
+  - Elegant 3-row side column (`AM/PM` / `Weather Icon` / `Temperature`) with detailed hover tooltip.
 - **Embedded Supertonic-3 ONNX TTS**: On-device neural speech synthesis supporting 5 languages (Korean, English, Spanish, Portuguese, French) and 10 voice styles (F1–F5, M1–M5).
 - **Configurable Alert Thresholds**: Customizable crossing intervals (e.g., every \$50, \$100, \$500) with anti-oscillation filtering to prevent duplicate triggers.
 - **Frameless egui Desktop UI**:
@@ -89,7 +94,7 @@ cargo run
 ```
 
 ### 3. Run Tests
-Execute the full test suite (37 unit & integration tests):
+Execute the full test suite (40 unit & integration tests):
 ```bash
 cargo test
 ```

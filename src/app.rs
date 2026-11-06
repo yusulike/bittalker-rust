@@ -12,6 +12,7 @@ use egui::{Color32, CornerRadius, FontId, RichText, Sense, Stroke, Vec2};
 
 use crate::core::interval::{Direction, IntervalTracker};
 use crate::core::monitor::{MonitorEvent, PriceMonitor};
+use crate::core::weather::WeatherService;
 use crate::i18n::{announcement_text, voice_test_text};
 use crate::settings::{lang_code, Settings, SettingsManager};
 use crate::tts::service::{TtsEvent, TtsService};
@@ -119,6 +120,8 @@ pub struct BitTalkerApp {
     monitor: PriceMonitor,
     monitor_rx: Option<std::sync::mpsc::Receiver<MonitorEvent>>,
 
+    weather: WeatherService,
+
     tracker: IntervalTracker,
     tts: TtsService,
 
@@ -163,6 +166,8 @@ impl BitTalkerApp {
         let mut monitor = PriceMonitor::start("btcusdt", ctx.clone());
         let monitor_rx = monitor.take_receiver();
 
+        let weather = WeatherService::start(&s.weather_location, ctx.clone());
+
         let tts = TtsService::new(
             crate::paths::onnx_dir(),
             crate::paths::voice_styles_dir(),
@@ -198,6 +203,7 @@ impl BitTalkerApp {
             settings,
             monitor,
             monitor_rx,
+            weather,
             tracker: IntervalTracker::new(s.interval as f64),
             tts,
             price_text: "Waiting...".to_string(),
@@ -315,6 +321,10 @@ impl BitTalkerApp {
 
         self.current_voice = new.voice.clone();
         self.current_language = new.language.clone();
+
+        if new.weather_location != self.settings.get().weather_location {
+            self.weather.update_location(&new.weather_location);
+        }
 
         // Persist (muted is kept at its live value, like the original which
         // only saves it on the mute toggle)
@@ -461,7 +471,8 @@ impl eframe::App for BitTalkerApp {
         // Screenshot automation
         if self.screenshot_path.is_some() {
             self.screenshot_frames += 1;
-            let ready = self.tracker.last_price.is_some() || self.screenshot_frames >= 25;
+            let ready = (self.tracker.last_price.is_some() && self.weather.current().is_some())
+                || self.screenshot_frames >= 80;
             if ready {
                 // Ensure indicator has a direction (증감 표시) for screenshot verification
                 if self.indicator.is_none() {
@@ -653,7 +664,8 @@ impl BitTalkerApp {
             ui.spacing_mut().item_spacing.x = NORMAL_LAYOUT_SPACING;
 
             // Left: clock (vertically centered)
-            show_clock(ui, now);
+            let weather_info = self.weather.current();
+            show_clock(ui, now, weather_info.as_ref());
 
             vseparator(ui, NORMAL_SEPARATOR_HEIGHT);
 

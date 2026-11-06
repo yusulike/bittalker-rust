@@ -51,6 +51,7 @@ fn test_settings_dialog_flow() {
         muted: manager.get().muted,
         ticker_mode: dialog.ticker_mode,
         window_pos: None,
+        weather_location: dialog.weather_location.clone(),
     };
     manager.update(new_settings);
 
