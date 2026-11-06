@@ -48,7 +48,7 @@ pub const FRAME_CORNER_RADIUS: u8 = 12;
 /// Spacings & Separators
 pub const NORMAL_LAYOUT_SPACING: f32 = 10.0;
 pub const TICKER_LAYOUT_SPACING: f32 = 8.0;
-pub const NORMAL_ROW_GAP_Y: f32 = 4.0;
+pub const NORMAL_ROW_GAP_Y: f32 = 8.0;
 pub const NORMAL_RIGHT_TOP_PAD: f32 = 6.0;
 pub const SEPARATOR_WIDTH: f32 = 1.0;
 pub const NORMAL_SEPARATOR_HEIGHT: f32 = 76.0;
@@ -76,7 +76,7 @@ pub const STATUS_PAD_Y: f32 = 2.0;
 /// Action Buttons
 pub const BUTTON_SIZE_NORMAL: Vec2 = Vec2::new(28.0, 22.0);
 pub const BUTTON_SIZE_TICKER: Vec2 = Vec2::new(26.0, 20.0);
-pub const BUTTON_SPACING: f32 = 6.0;
+pub const BUTTON_SPACING: f32 = 10.0;
 
 #[derive(Clone, Copy, PartialEq)]
 enum Status {
