@@ -31,7 +31,7 @@ const DATE_TEXT: Color32 = Color32::from_rgb(0xaa, 0xaa, 0xaa);
 // ============================================================================
 
 /// Window Dimensions (Logical points)
-pub const NORMAL_WINDOW_WIDTH: f32 = 490.0;
+pub const NORMAL_WINDOW_WIDTH: f32 = 500.0;
 pub const NORMAL_WINDOW_HEIGHT: f32 = 100.0;
 pub const TICKER_WINDOW_WIDTH: f32 = 490.0;
 pub const TICKER_WINDOW_HEIGHT: f32 = 45.0;
@@ -374,13 +374,11 @@ impl eframe::App for BitTalkerApp {
             ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(size));
         }
         if let Some(always) = self.pending_level.take() {
-            ctx.send_viewport_cmd(egui::ViewportCommand::WindowLevel(
-                if always {
-                    egui::WindowLevel::AlwaysOnTop
-                } else {
-                    egui::WindowLevel::Normal
-                },
-            ));
+            ctx.send_viewport_cmd(egui::ViewportCommand::WindowLevel(if always {
+                egui::WindowLevel::AlwaysOnTop
+            } else {
+                egui::WindowLevel::Normal
+            }));
         }
 
         let now = Local::now();
@@ -396,26 +394,24 @@ impl eframe::App for BitTalkerApp {
                 egui::Margin::symmetric(NORMAL_MARGIN_X, NORMAL_MARGIN_Y)
             });
 
-        egui::CentralPanel::default()
-            .frame(frame)
-            .show(ui, |ui| {
-                // Background drag region, registered first so real widgets
-                // (buttons) stay on top for hit-testing
-                let bg_rect = ui.max_rect();
-                let drag = ui.interact(bg_rect, egui::Id::unique("window-drag"), Sense::drag());
-                if drag.drag_started() {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
-                }
-                if drag.drag_stopped() {
-                    self.save_window_pos();
-                }
+        egui::CentralPanel::default().frame(frame).show(ui, |ui| {
+            // Background drag region, registered first so real widgets
+            // (buttons) stay on top for hit-testing
+            let bg_rect = ui.max_rect();
+            let drag = ui.interact(bg_rect, egui::Id::unique("window-drag"), Sense::drag());
+            if drag.drag_started() {
+                ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
+            }
+            if drag.drag_stopped() {
+                self.save_window_pos();
+            }
 
-                if self.ticker_mode {
-                    self.ticker_layout(ui, now);
-                } else {
-                    self.normal_layout(ui, now);
-                }
-            });
+            if self.ticker_mode {
+                self.ticker_layout(ui, now);
+            } else {
+                self.normal_layout(ui, now);
+            }
+        });
 
         // Settings dialog (taken out of self so the test-voice callback can
         // borrow the app)
@@ -441,19 +437,21 @@ impl eframe::App for BitTalkerApp {
                     self.indicator = Some(Direction::Up);
                 }
                 if let Some(path) = self.screenshot_path.take() {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::ScreenshotCallback::new(
-                        move |image: std::sync::Arc<egui::ColorImage>| {
-                            let _ = image::save_buffer(
-                                &path,
-                                image.as_raw(),
-                                image.size[0] as u32,
-                                image.size[1] as u32,
-                                image::ExtendedColorType::Rgba8,
-                            );
-                            println!("[Screenshot] Saved to {}", path.display());
-                            std::process::exit(0);
-                        },
-                    )));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
+                        egui::ScreenshotCallback::new(
+                            move |image: std::sync::Arc<egui::ColorImage>| {
+                                let _ = image::save_buffer(
+                                    &path,
+                                    image.as_raw(),
+                                    image.size[0] as u32,
+                                    image.size[1] as u32,
+                                    image::ExtendedColorType::Rgba8,
+                                );
+                                println!("[Screenshot] Saved to {}", path.display());
+                                std::process::exit(0);
+                            },
+                        ),
+                    ));
                 }
             } else {
                 ctx.request_repaint_after(Duration::from_millis(50));
@@ -509,25 +507,42 @@ impl BitTalkerApp {
 
     fn status_pill(&self, ui: &mut egui::Ui) {
         let color = self.status.color();
-        let galley = ui
-            .painter()
-            .layout_no_wrap(self.status.text().to_string(), FontId::proportional(STATUS_FONT_SIZE), color);
+        let galley = ui.painter().layout_no_wrap(
+            self.status.text().to_string(),
+            FontId::proportional(STATUS_FONT_SIZE),
+            color,
+        );
         let pad = Vec2::new(STATUS_PAD_X, STATUS_PAD_Y);
         let size = galley.size() + pad * 2.0 + Vec2::new(2.0, 2.0);
         let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, CornerRadius::same(STATUS_CORNER_RADIUS), Color32::from_rgb(0x22, 0x22, 0x22));
-        painter.rect_stroke(rect, CornerRadius::same(STATUS_CORNER_RADIUS), Stroke::new(1.0, color), egui::StrokeKind::Inside);
+        painter.rect_filled(
+            rect,
+            CornerRadius::same(STATUS_CORNER_RADIUS),
+            Color32::from_rgb(0x22, 0x22, 0x22),
+        );
+        painter.rect_stroke(
+            rect,
+            CornerRadius::same(STATUS_CORNER_RADIUS),
+            Stroke::new(1.0, color),
+            egui::StrokeKind::Inside,
+        );
         let pos = rect.left_top() + pad + Vec2::new(1.0, 1.0);
         painter.galley(pos, galley, color);
     }
 
     fn buttons(&mut self, ui: &mut egui::Ui, small: bool) {
-        let size = if small { BUTTON_SIZE_TICKER } else { BUTTON_SIZE_NORMAL };
+        let size = if small {
+            BUTTON_SIZE_TICKER
+        } else {
+            BUTTON_SIZE_NORMAL
+        };
         if icon_button(
             ui,
             egui::Id::unique("mute"),
-            IconKind::Speaker { muted: self.is_muted },
+            IconKind::Speaker {
+                muted: self.is_muted,
+            },
             "Mute/Unmute TTS",
             size,
         )
@@ -535,10 +550,26 @@ impl BitTalkerApp {
         {
             self.toggle_mute();
         }
-        if icon_button(ui, egui::Id::unique("settings"), IconKind::Gear, "Settings", size).clicked() {
+        if icon_button(
+            ui,
+            egui::Id::unique("settings"),
+            IconKind::Gear,
+            "Settings",
+            size,
+        )
+        .clicked()
+        {
             self.open_settings();
         }
-        if icon_button(ui, egui::Id::unique("close"), IconKind::Close, "Close", size).clicked() {
+        if icon_button(
+            ui,
+            egui::Id::unique("close"),
+            IconKind::Close,
+            "Close",
+            size,
+        )
+        .clicked()
+        {
             self.save_window_pos();
             ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
         }
@@ -657,9 +688,10 @@ fn install_fonts(ctx: &egui::Context) {
     ];
     for (name, path) in candidates {
         if let Ok(bytes) = std::fs::read(path) {
-            fonts
-                .font_data
-                .insert(name.to_string(), std::sync::Arc::new(egui::FontData::from_owned(bytes)));
+            fonts.font_data.insert(
+                name.to_string(),
+                std::sync::Arc::new(egui::FontData::from_owned(bytes)),
+            );
             installed.push(name.to_string());
         }
     }
