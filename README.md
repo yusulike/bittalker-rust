@@ -127,11 +127,9 @@ The script packages `target/release/bittalker.exe`, `onnxruntime.dll`, `download
 
 ---
 
-## References & Acknowledgments
+## References
 
-- **Original Project**: Ported from Python [yusulike/bittalker](https://github.com/yusulike/bittalker) (`PyQt6` + Python `onnxruntime`). The Rust version achieves complete functional parity, improved memory efficiency, lower CPU usage, and eliminates all external runtime dependencies.
-- **TTS Engine**: [Supertonic 3](https://github.com/supertone-inc/supertonic) by Supertone Inc.
-- **TTS Model Weights**: [Supertone/supertonic-3](https://huggingface.co/Supertone/supertonic-3) on Hugging Face (OpenRAIL-M license).
+- [Supertonic](https://github.com/supertone-inc/supertonic)
 
 ---
 

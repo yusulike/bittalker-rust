@@ -127,11 +127,9 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1
 
 ---
 
-## 레퍼런스 및 감사의 글 (References & Acknowledgments)
+## References
 
-- **원본 프로젝트**: Python [yusulike/bittalker](https://github.com/yusulike/bittalker)(`PyQt6` + Python `onnxruntime`)에서 포팅되었습니다. 순수 Rust로 모든 기능을 동등하게 구현하고 메모리/CPU 효율을 개선했습니다.
-- **TTS 엔진**: Supertone Inc.의 [Supertonic 3](https://github.com/supertone-inc/supertonic)
-- **TTS 모델 가중치**: Hugging Face [Supertone/supertonic-3](https://huggingface.co/Supertone/supertonic-3) (OpenRAIL-M 라이센스)
+- [Supertonic](https://github.com/supertone-inc/supertonic)
 
 ---
 
