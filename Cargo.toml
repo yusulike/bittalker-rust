@@ -1,0 +1,46 @@
+[package]
+name = "bittalker"
+version = "0.1.0"
+edition = "2021"
+description = "Real-time Bitcoin price monitor with desktop UI and voice alerts (Rust port of BitTalker)"
+license = "MIT"
+default-run = "bittalker"
+
+[dependencies]
+eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts", "clipboard", "links"] }
+egui = "0.37"
+tokio = { version = "1", features = ["rt", "time", "macros", "sync"] }
+tokio-tungstenite = { version = "0.30", features = ["rustls-tls-native-roots"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+futures-util = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ort = { version = "2.0.0-rc.15", default-features = false, features = ["load-dynamic", "ndarray", "std"] }
+ndarray = "0.17"
+rand = "0.10"
+rand_distr = "0.6"
+rodio = "0.23"
+hound = "3.5"
+md-5 = "0.10"
+unicode-normalization = "0.1"
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+ureq = { version = "3", default-features = false, features = ["rustls"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+# ONNX inference is heavy even in dev builds; keep it usable.
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true
+
+[[bin]]
+name = "bittalker"
+path = "src/main.rs"
+
+[[bin]]
+name = "download-assets"
+path = "src/bin/download_assets.rs"
