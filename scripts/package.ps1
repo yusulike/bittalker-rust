@@ -34,7 +34,7 @@ if (-not $SkipAssetDownload) {
             Copy-Item -Path $debugAssets -Destination $releaseAssets -Recurse -Force
         } else {
             Write-Host "Downloading assets directly from HuggingFace..."
-            & "$releaseDir\download-assets.exe" $releaseAssets
+            & "$releaseDir\bittalker.exe" --download-assets $releaseAssets
         }
     } else {
         Write-Host "Assets already present in target/release/assets."
@@ -62,7 +62,6 @@ New-Item -ItemType Directory -Path $bundleDir -Force | Out-Null
 
 # Copy executable, dlls, and assets
 Copy-Item (Join-Path $releaseDir "bittalker.exe") $bundleDir
-Copy-Item (Join-Path $releaseDir "download-assets.exe") $bundleDir
 
 # Bundle CPU-only ONNX Runtime DLL (no DirectML.dll needed!)
 $ortDll = Join-Path $releaseDir "onnxruntime.dll"
@@ -87,12 +86,13 @@ BitTalker (Rust) - Real-time Bitcoin Price Monitor with Voice Alerts
 
 Directory Structure:
   bittalker.exe          - Main GUI application
-  download-assets.exe    - Standalone TTS models downloader
+  onnxruntime.dll        - ONNX Runtime dynamic library
   assets/                - TTS models and voice style configs
 
 How to run:
   Double-click `bittalker.exe` to run.
-  If assets are missing or corrupted, run `download-assets.exe` to re-download.
+  If assets are missing or corrupted, run:
+    bittalker.exe --download-assets
 "@ | Set-Content -Path (Join-Path $bundleDir "README.txt") -Encoding UTF8
 
 # Compress to ZIP

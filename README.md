@@ -45,7 +45,6 @@ The application expects the `assets/` directory to reside directly adjacent to t
 ```text
 [Installation Directory]/
 ├── bittalker.exe          # Main GUI application
-├── download-assets.exe    # Standalone asset downloader CLI
 ├── onnxruntime.dll        # CPU-only ONNX Runtime dynamic library
 ├── assets/                # TTS models and voice configurations
 │   ├── config.json
@@ -109,7 +108,7 @@ To generate a standalone portable ZIP distribution:
 powershell -ExecutionPolicy Bypass -File scripts\package.ps1
 ```
 
-The script packages `target/release/bittalker.exe`, `onnxruntime.dll`, `download-assets.exe`, and the `assets/` directory into `dist/bittalker-windows-x64.zip`. Unzipping this archive gives you a fully functional, self-contained portable installation ready to run on any 64-bit Windows machine.
+The script packages `target/release/bittalker.exe`, `onnxruntime.dll`, and the `assets/` directory into `dist/bittalker-windows-x64.zip`. Unzipping this archive gives you a fully functional, self-contained portable installation ready to run on any 64-bit Windows machine.
 
 ---
 

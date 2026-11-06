@@ -45,7 +45,6 @@ BitTalker는 바이낸스 웹소켓을 통해 비트코인 체결 데이터를 �
 ```text
 [실행파일 디렉터리]/
 ├── bittalker.exe          # 메인 GUI 애플리케이션
-├── download-assets.exe    # 독립 모델 다운로더 CLI
 ├── onnxruntime.dll        # CPU 전용 ONNX Runtime 동적 라이브러리
 ├── assets/                # TTS 모델 및 음성 설정
 │   ├── config.json
