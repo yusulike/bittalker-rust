@@ -55,8 +55,8 @@ fn test_settings_dialog_flow() {
     };
     manager.update(new_settings);
 
-    let tracker = IntervalTracker::new(manager.get().interval as f64);
-    assert_eq!(tracker.interval, 500.0);
+    let tracker = IntervalTracker::new(manager.get().interval);
+    assert_eq!(tracker.interval, 500);
 
     // 6. Reload from disk to verify persistence
     let reloaded = SettingsManager::new(&file);

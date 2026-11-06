@@ -204,7 +204,7 @@ impl BitTalkerApp {
             monitor,
             monitor_rx,
             weather,
-            tracker: IntervalTracker::new(s.interval as f64),
+            tracker: IntervalTracker::new(s.interval),
             tts,
             price_text: "Waiting...".to_string(),
             indicator: None,
@@ -276,10 +276,9 @@ impl BitTalkerApp {
         }
     }
 
-    fn on_interval_crossed(&mut self, price: f64, direction: Direction) {
+    fn on_interval_crossed(&mut self, price: i64, direction: Direction) {
         let lang = lang_code(&self.current_language).to_string();
-        let price_int = price as i64;
-        let text = announcement_text(&self.current_language, price_int, direction);
+        let text = announcement_text(&self.current_language, price, direction);
 
         println!("Triggering TTS: {text} ({}, {lang})", self.current_voice);
 
@@ -316,8 +315,8 @@ impl BitTalkerApp {
     }
 
     fn apply_new_settings(&mut self, new: Settings) {
-        // Update interval (resets boundary state like the original)
-        self.tracker.set_interval(new.interval as f64);
+        // Update interval
+        self.tracker.set_interval(new.interval);
 
         self.current_voice = new.voice.clone();
         self.current_language = new.language.clone();
@@ -371,7 +370,7 @@ impl BitTalkerApp {
         draft.language = self.current_language.clone();
         draft.always_on_top = self.always_on_top;
         draft.ticker_mode = self.ticker_mode;
-        draft.interval = self.tracker.interval as i64;
+        draft.interval = self.tracker.interval;
         self.dialog = Some(SettingsDialog::open_with_state(
             &draft,
             self.current_window_rect,
