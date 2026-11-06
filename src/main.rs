@@ -9,6 +9,19 @@ use bittalker::settings;
 use bittalker::app;
 use eframe::egui;
 
+fn app_icon() -> Option<std::sync::Arc<egui::IconData>> {
+    let bytes = include_bytes!("../assets/icon.png");
+    image::load_from_memory(bytes).ok().map(|img| {
+        let rgba = img.to_rgba8();
+        let (width, height) = rgba.dimensions();
+        std::sync::Arc::new(egui::IconData {
+            rgba: rgba.into_raw(),
+            width,
+            height,
+        })
+    })
+}
+
 fn main() -> eframe::Result<()> {
     // 1. Handle CLI commands
     let args: Vec<String> = std::env::args().collect();
@@ -124,7 +137,7 @@ fn main() -> eframe::Result<()> {
     let settings = settings::SettingsManager::new(paths::settings_path());
     let s = settings.get().clone();
 
-    let viewport = egui::ViewportBuilder::default()
+    let mut viewport = egui::ViewportBuilder::default()
         .with_decorations(false)
         .with_transparent(true)
         .with_inner_size(if s.ticker_mode {
@@ -133,13 +146,11 @@ fn main() -> eframe::Result<()> {
             egui::vec2(520.0, 100.0)
         })
         .with_min_inner_size(egui::vec2(320.0, 40.0));
+    if let Some(icon) = app_icon() {
+        viewport = viewport.with_icon(icon);
+    }
     let viewport = if s.always_on_top {
         viewport.with_always_on_top()
-    } else {
-        viewport
-    };
-    let viewport = if let Some([x, y]) = s.window_pos {
-        viewport.with_position([x, y])
     } else {
         viewport
     };

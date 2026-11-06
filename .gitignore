@@ -1,6 +1,10 @@
 /target
 cache/
 settings.json
-assets/
 dist/
-*.png
+assets/onnx/
+assets/voice_styles/
+assets/config.json
+!assets/icon.png
+!assets/icon.ico
+*.jpg

@@ -41,6 +41,15 @@ if (-not $SkipAssetDownload) {
     }
 }
 
+# Ensure icons are in release assets
+if (Test-Path "$projectRoot\assets\icon.ico") {
+    if (-not (Test-Path $releaseAssets)) {
+        New-Item -ItemType Directory -Path $releaseAssets -Force | Out-Null
+    }
+    Copy-Item "$projectRoot\assets\icon.ico" $releaseAssets -Force
+    Copy-Item "$projectRoot\assets\icon.png" $releaseAssets -Force
+}
+
 Write-Host "`n=== 3. Packaging Distribution Bundle ===" -ForegroundColor Cyan
 $distDir = Join-Path $projectRoot $OutputDir
 $bundleName = "bittalker-windows-x64"

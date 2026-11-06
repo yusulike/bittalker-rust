@@ -84,6 +84,7 @@ pub struct BitTalkerApp {
     screenshot_frames: usize,
 
     current_window_rect: Option<egui::Rect>,
+    pending_initial_pos: Option<[f32; 2]>,
 }
 
 impl BitTalkerApp {
@@ -148,6 +149,7 @@ impl BitTalkerApp {
             screenshot_path,
             screenshot_frames: 0,
             current_window_rect: None,
+            pending_initial_pos: s.window_pos,
         }
     }
 
@@ -254,9 +256,8 @@ impl BitTalkerApp {
         // only saves it on the mute toggle)
         let mut to_save = new.clone();
         to_save.muted = self.is_muted;
-        to_save.window_pos = self
-            .current_window_rect
-            .map(|r| [r.min.x, r.min.y])
+        to_save.window_pos = crate::ui::window_manager::platform::get_physical_window_pos()
+            .or_else(|| self.current_window_rect.map(|r| [r.min.x, r.min.y]))
             .or(self.settings.get().window_pos);
         self.settings.update(to_save);
 
@@ -276,8 +277,9 @@ impl BitTalkerApp {
     }
 
     fn save_window_pos(&mut self) {
-        if let Some(rect) = self.current_window_rect {
-            let pos = [rect.min.x, rect.min.y];
+        let pos = crate::ui::window_manager::platform::get_physical_window_pos()
+            .or_else(|| self.current_window_rect.map(|r| [r.min.x, r.min.y]));
+        if let Some(pos) = pos {
             if self.settings.get().window_pos != Some(pos) {
                 let mut s = self.settings.get().clone();
                 s.window_pos = Some(pos);
@@ -304,6 +306,16 @@ impl eframe::App for BitTalkerApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         self.current_window_rect = ui.input(|i| i.viewport().outer_rect);
+
+        if let Some(pos) = self.pending_initial_pos.take() {
+            let (w, h) = if self.ticker_mode {
+                (540.0, 45.0)
+            } else {
+                (520.0, 100.0)
+            };
+            crate::ui::window_manager::platform::set_physical_window_pos(pos, w, h);
+        }
+
         self.poll_monitor();
         self.poll_tts_events();
 
