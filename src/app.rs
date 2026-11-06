@@ -48,6 +48,8 @@ pub const FRAME_CORNER_RADIUS: u8 = 12;
 /// Spacings & Separators
 pub const NORMAL_LAYOUT_SPACING: f32 = 10.0;
 pub const TICKER_LAYOUT_SPACING: f32 = 8.0;
+pub const NORMAL_ROW_GAP_Y: f32 = 4.0;
+pub const NORMAL_RIGHT_TOP_PAD: f32 = 6.0;
 pub const SEPARATOR_WIDTH: f32 = 1.0;
 pub const NORMAL_SEPARATOR_HEIGHT: f32 = 76.0;
 pub const TICKER_SEPARATOR_HEIGHT: f32 = 16.0;
@@ -649,8 +651,8 @@ impl BitTalkerApp {
                 Vec2::new(right_width, 80.0),
                 egui::Layout::top_down(egui::Align::Center),
                 |ui| {
-                    ui.spacing_mut().item_spacing.y = 4.0;
-                    ui.add_space(6.0);
+                    ui.spacing_mut().item_spacing.y = NORMAL_ROW_GAP_Y;
+                    ui.add_space(NORMAL_RIGHT_TOP_PAD);
 
                     // Price row (price + 증감 표시 영역)
                     ui.horizontal(|ui| {
