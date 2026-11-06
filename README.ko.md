@@ -22,11 +22,16 @@ BitTalker는 바이낸스 웹소켓을 통해 비트코인 체결 데이터를 �
 ## 주요 기능
 
 - **실시간 바이낸스 웹소켓 수신**: `btcusdt@trade` 스트림을 연결하여 틱 단위 실시간 감시 및 끊김 시 자동 재연결.
+- **레트로 데스크톱 디지털 시계 및 정각 차임벨**:
+  - 플립 시계 스타일 카드 위젯 (시, 분, 초, AM/PM, 전체 날짜 표기).
+  - 일반 모드 및 컴팩트 티커 모드 모두에서 실시간 초 단위 시계 표시.
+  - 매시간 정각 자동 알림 오디오 차임벨 지원.
 - **임베디드 Supertonic-3 ONNX TTS**: 로컬 디바이스에서 5개 언어(한국어, 영어, 스페인어, 포르투갈어, 프랑스어) 및 10가지 음성 스타일(F1~F5, M1~M5) 합성.
-- **가격 구간 알림 및 정각 시보**: 진동 방지(anti-oscillation) 필터링이 적용된 가격 돌파 알림 및 매시 정각 차임벨.
+- **가격 구간 돌파 알림**: 사용자가 지정한 가격 간격(예: \$50, \$100, \$500 등) 돌파 알림 및 진동 방지(anti-oscillation) 필터링.
 - **프레임리스 egui 데스크톱 UI**:
   - 2가지 화면 모드: **일반 모드**(시계 + 가격 + 컨트롤) 및 **컴팩트 티커 모드**(단일 라인 바 형태).
   - 전체 화면 어디로나 마우스 드래그로 자유로운 이동 가능.
+  - 재실행 시 다중 모니터 좌표 자동 기억 및 복원.
   - 항상 위(Always on Top) 설정 및 음소거 빠른 토글 버튼.
   - 메인 창 옆에 유기적으로 배치되는 독립 설정 다이얼로그.
 - **내장 Asset 다운로더**: Python 없이 Rust 바이너리 자체에서 HuggingFace의 TTS 모델을 즉시 다운로드.
@@ -122,9 +127,11 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1
 
 ---
 
-## 원본 프로젝트 및 포팅 정보
+## 레퍼런스 및 감사의 글 (References & Acknowledgments)
 
-본 프로젝트는 원본 Python 버전 [yusulike/bittalker](https://github.com/yusulike/bittalker)(`PyQt6` + Python `onnxruntime`)의 모든 UI 및 비즈니스 로직을 Rust로 완전히 포팅한 것입니다. 성능 및 메모리 효율성을 크게 개선하고 외부 의존성을 제거하였습니다.
+- **원본 프로젝트**: Python [yusulike/bittalker](https://github.com/yusulike/bittalker)(`PyQt6` + Python `onnxruntime`)에서 포팅되었습니다. 순수 Rust로 모든 기능을 동등하게 구현하고 메모리/CPU 효율을 개선했습니다.
+- **TTS 엔진**: Supertone Inc.의 [Supertonic 3](https://github.com/supertone-inc/supertonic)
+- **TTS 모델 가중치**: Hugging Face [Supertone/supertonic-3](https://huggingface.co/Supertone/supertonic-3) (OpenRAIL-M 라이센스)
 
 ---
 

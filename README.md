@@ -22,11 +22,16 @@ This repository is a pure Rust port designed to replace the original Python (PyQ
 ## Features
 
 - **Real-Time Binance WebSocket Stream**: Direct tick-by-tick monitoring of `btcusdt@trade` with automatic reconnection.
+- **Retro Desktop Digital Clock & Hourly Chime**:
+  - Flip-clock card design showing Hours, Minutes, Seconds, AM/PM, and full date.
+  - Live real-time clock updates in both Normal and Compact Ticker modes.
+  - Pleasant hourly audio chime on every hour.
 - **Embedded Supertonic-3 ONNX TTS**: On-device neural speech synthesis supporting 5 languages (Korean, English, Spanish, Portuguese, French) and 10 voice styles (F1–F5, M1–M5).
-- **Configurable Alert Thresholds & Hourly Chime**: Customizable crossing intervals with anti-oscillation filtering, plus optional hourly time chimes.
+- **Configurable Alert Thresholds**: Customizable crossing intervals (e.g., every \$50, \$100, \$500) with anti-oscillation filtering to prevent duplicate triggers.
 - **Frameless egui Desktop UI**:
   - Two switchable view modes: **Normal** (clock + price + controls) and **Compact Ticker** (single-line bar).
   - Drag-and-drop repositioning anywhere on the screen.
+  - Multi-monitor coordinate memory across application restarts.
   - Always-on-top toggle and quick audio mute button.
   - Independent native settings dialog centered relative to the main window.
 - **Built-in Model Downloader**: CLI tool and flag to fetch models directly from HuggingFace without requiring Python.
@@ -122,9 +127,11 @@ The script packages `target/release/bittalker.exe`, `onnxruntime.dll`, `download
 
 ---
 
-## Acknowledgments & Porting Note
+## References & Acknowledgments
 
-This software was ported from the original Python project [yusulike/bittalker](https://github.com/yusulike/bittalker) (`PyQt6` + Python `onnxruntime`). The Rust version achieves complete functional parity, improved memory efficiency, lower CPU usage, and eliminates all external runtime dependencies.
+- **Original Project**: Ported from Python [yusulike/bittalker](https://github.com/yusulike/bittalker) (`PyQt6` + Python `onnxruntime`). The Rust version achieves complete functional parity, improved memory efficiency, lower CPU usage, and eliminates all external runtime dependencies.
+- **TTS Engine**: [Supertonic 3](https://github.com/supertone-inc/supertonic) by Supertone Inc.
+- **TTS Model Weights**: [Supertone/supertonic-3](https://huggingface.co/Supertone/supertonic-3) on Hugging Face (OpenRAIL-M license).
 
 ---
 
