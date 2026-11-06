@@ -167,7 +167,7 @@ fn generator_loop(
 
     // Model version for cache keying, so audio cached by an older model never
     // gets replayed after a model upgrade
-    let model_version = engine
+    let mut model_version = engine
         .as_ref()
         .map(|e| e.model_version().to_string())
         .unwrap_or_else(|| "unknown".to_string());
@@ -181,6 +181,22 @@ fn generator_loop(
 
     while let Ok(msg) = rx.recv() {
         let GeneratorMsg::Speak(req) = msg;
+
+        // Lazy engine init if models were downloaded after startup
+        if engine.is_none() && onnx_dir.is_dir() && voice_styles_dir.is_dir() {
+            println!("Attempting lazy reload of Supertonic TTS from: {}", onnx_dir.display());
+            match SupertonicEngine::load(&onnx_dir) {
+                Ok(e) => {
+                    model_version = e.model_version().to_string();
+                    available_voices = scan_voice_styles(&voice_styles_dir);
+                    println!("Supertonic initialized with voices: {available_voices:?}");
+                    engine = Some(e);
+                }
+                Err(e) => {
+                    eprintln!("Failed to initialize Supertonic on reload: {e:#}");
+                }
+            }
+        }
 
         let filepath = if req.cache {
             let filename = cache_filename(&req.text, &req.voice, &req.lang, &model_version);

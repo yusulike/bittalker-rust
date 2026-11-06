@@ -50,6 +50,17 @@ pub fn verify_assets(assets_dir: &Path) -> Result<()> {
 
 /// Download all missing or incomplete assets to `assets_dir`.
 pub fn download_all(assets_dir: &Path) -> Result<()> {
+    download_all_with_progress(assets_dir, |_, _, _, _| ())
+}
+
+/// Download all missing or incomplete assets to `assets_dir` with a progress callback.
+///
+/// Callback signature: `(rel_path, file_index, total_files, file_progress_fraction)`
+/// where `file_index` is 1-based (1..=total_files) and `file_progress_fraction` is 0.0..=1.0.
+pub fn download_all_with_progress<F>(assets_dir: &Path, mut on_progress: F) -> Result<()>
+where
+    F: FnMut(&str, usize, usize, f32),
+{
     println!("=== BitTalker Asset Downloader ===");
     println!("Target directory: {}", assets_dir.display());
     println!("Source: {}\n", HF_BASE_URL);
@@ -67,15 +78,30 @@ pub fn download_all(assets_dir: &Path) -> Result<()> {
         io::stdout().flush().ok();
 
         if target_path.is_file() {
-            let metadata = fs::metadata(&target_path)?;
-            if metadata.len() > 0 {
-                println!("already present ({:.1} MB)", metadata.len() as f64 / 1_048_576.0);
-                continue;
+            if let Ok(metadata) = fs::metadata(&target_path) {
+                if metadata.len() > 0 {
+                    println!("already present ({:.1} MB)", metadata.len() as f64 / 1_048_576.0);
+                    on_progress(rel_path, i + 1, total_files, 1.0);
+                    continue;
+                }
             }
         }
 
-        download_file(&url, &target_path)
-            .with_context(|| format!("failed downloading {rel_path} from {url}"))?;
+        on_progress(rel_path, i + 1, total_files, 0.0);
+        download_file(&url, &target_path, &mut |downloaded, total| {
+            let pct = if let Some(tot) = total {
+                if tot > 0 {
+                    (downloaded as f32 / tot as f32).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                }
+            } else {
+                0.0
+            };
+            on_progress(rel_path, i + 1, total_files, pct);
+        })
+        .with_context(|| format!("failed downloading {rel_path} from {url}"))?;
+        on_progress(rel_path, i + 1, total_files, 1.0);
     }
 
     println!("\nVerification...");
@@ -84,7 +110,11 @@ pub fn download_all(assets_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-fn download_file(url: &str, dest: &Path) -> Result<()> {
+fn download_file(
+    url: &str,
+    dest: &Path,
+    on_chunk: &mut dyn FnMut(u64, Option<u64>),
+) -> Result<()> {
     if let Some(parent) = dest.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -117,8 +147,9 @@ fn download_file(url: &str, dest: &Path) -> Result<()> {
         file.write_all(&buffer[..n])?;
         downloaded += n as u64;
 
-        if last_print.elapsed().as_millis() >= 300 {
+        if last_print.elapsed().as_millis() >= 100 {
             last_print = Instant::now();
+            on_chunk(downloaded, content_len);
             if let Some(total) = content_len {
                 let pct = (downloaded as f64 / total as f64) * 100.0;
                 print!("\r... {:.1} MB / {:.1} MB ({:.0}%)",
@@ -133,6 +164,7 @@ fn download_file(url: &str, dest: &Path) -> Result<()> {
         }
     }
 
+    on_chunk(downloaded, content_len);
     file.flush()?;
     drop(file);
 

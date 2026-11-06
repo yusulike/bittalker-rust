@@ -50,20 +50,12 @@ if (Test-Path "$projectRoot\assets\icon.ico") {
     Copy-Item "$projectRoot\assets\icon.png" $releaseAssets -Force
 }
 
-Write-Host "`n=== 3. Packaging Distribution Bundle ===" -ForegroundColor Cyan
+Write-Host "`n=== 3. Packaging Distribution Bundles ===" -ForegroundColor Cyan
 $distDir = Join-Path $projectRoot $OutputDir
-$bundleName = "bittalker-windows-x64"
-$bundleDir = Join-Path $distDir $bundleName
-
-if (Test-Path $bundleDir) {
-    Remove-Item $bundleDir -Recurse -Force
+if (-not (Test-Path $distDir)) {
+    New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 }
-New-Item -ItemType Directory -Path $bundleDir -Force | Out-Null
 
-# Copy executable, dlls, and assets
-Copy-Item (Join-Path $releaseDir "bittalker.exe") $bundleDir
-
-# Bundle CPU-only ONNX Runtime DLL (no DirectML.dll needed!)
 $ortDll = Join-Path $releaseDir "onnxruntime.dll"
 if (-not (Test-Path $ortDll)) {
     $debugOrt = Join-Path $projectRoot "target\debug\onnxruntime.dll"
@@ -71,36 +63,86 @@ if (-not (Test-Path $ortDll)) {
         Copy-Item $debugOrt $releaseDir
     }
 }
+
+# --- 3A. Slim Bundle (without assets) ---
+$slimName = "bittalker-windows-x64"
+$slimDir = Join-Path $distDir $slimName
+if (Test-Path $slimDir) {
+    Remove-Item $slimDir -Recurse -Force
+}
+New-Item -ItemType Directory -Path $slimDir -Force | Out-Null
+
+Copy-Item (Join-Path $releaseDir "bittalker.exe") $slimDir
 if (Test-Path $ortDll) {
-    Copy-Item $ortDll $bundleDir
-    Write-Host "Bundled onnxruntime.dll into package."
+    Copy-Item $ortDll $slimDir
 }
 
-if (Test-Path $releaseAssets) {
-    Copy-Item $releaseAssets $bundleDir -Recurse -Force
-}
-
-# Create README for end-users
 @'
-BitTalker (Rust) - Real-time Bitcoin Price Monitor with Voice Alerts
+BitTalker (Rust) - Real-time Bitcoin Price Monitor with Voice Alerts (Slim Edition)
+
+Directory Structure:
+  bittalker.exe          - Main GUI application
+  onnxruntime.dll        - ONNX Runtime dynamic library
+  README.txt             - This guide
+
+Voice Models (TTS):
+  This slim edition does NOT include the ~70MB voice models by default.
+  To enable voice alerts:
+    1. Open the application (`bittalker.exe`)
+    2. Click the Settings icon (⚙)
+    3. Click [⬇ Download Models (~70MB)]
+    The models will be downloaded and activated automatically without restarting.
+  Alternatively, you can run:
+    bittalker.exe --download-assets
+'@ | Set-Content -Path (Join-Path $slimDir "README.txt") -Encoding UTF8
+
+$slimZip = Join-Path $distDir "$slimName.zip"
+if (Test-Path $slimZip) {
+    Remove-Item $slimZip -Force
+}
+Write-Host "Creating Slim archive: $slimZip"
+Compress-Archive -Path "$slimDir\*" -DestinationPath $slimZip -Force
+
+# --- 3B. Full Bundle (with assets) ---
+$fullName = "bittalker-windows-x64-full"
+$fullDir = Join-Path $distDir $fullName
+if (Test-Path $fullDir) {
+    Remove-Item $fullDir -Recurse -Force
+}
+New-Item -ItemType Directory -Path $fullDir -Force | Out-Null
+
+Copy-Item (Join-Path $releaseDir "bittalker.exe") $fullDir
+if (Test-Path $ortDll) {
+    Copy-Item $ortDll $fullDir
+}
+if (Test-Path $releaseAssets) {
+    Copy-Item $releaseAssets $fullDir -Recurse -Force
+}
+
+@'
+BitTalker (Rust) - Real-time Bitcoin Price Monitor with Voice Alerts (Full Edition)
 
 Directory Structure:
   bittalker.exe          - Main GUI application
   onnxruntime.dll        - ONNX Runtime dynamic library
   assets/                - TTS models and voice style configs
+  README.txt             - This guide
 
 How to run:
   Double-click `bittalker.exe` to run.
-  If assets are missing or corrupted, run:
+  All voice models are pre-installed in the `assets/` folder.
+  If assets are ever corrupted or missing, you can re-download them in Settings (⚙)
+  or run:
     bittalker.exe --download-assets
-'@ | Set-Content -Path (Join-Path $bundleDir "README.txt") -Encoding UTF8
+'@ | Set-Content -Path (Join-Path $fullDir "README.txt") -Encoding UTF8
 
-# Compress to ZIP
-$zipPath = Join-Path $distDir "$bundleName.zip"
-if (Test-Path $zipPath) {
-    Remove-Item $zipPath -Force
+$fullZip = Join-Path $distDir "$fullName.zip"
+if (Test-Path $fullZip) {
+    Remove-Item $fullZip -Force
 }
-Write-Host "Creating archive: $zipPath"
-Compress-Archive -Path "$bundleDir\*" -DestinationPath $zipPath -Force
+Write-Host "Creating Full archive: $fullZip"
+Compress-Archive -Path "$fullDir\*" -DestinationPath $fullZip -Force
 
-Write-Host "`n[SUCCESS] Package successfully created at: $zipPath" -ForegroundColor Green
+Write-Host "`n[SUCCESS] Bundles successfully created:" -ForegroundColor Green
+Write-Host "  Slim: $slimZip" -ForegroundColor Green
+Write-Host "  Full: $fullZip" -ForegroundColor Green

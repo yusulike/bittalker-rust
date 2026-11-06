@@ -3,6 +3,7 @@
 //! live price + direction indicator, connection status pill, mute / settings
 //! / close buttons, hourly chime and threshold-crossing voice alerts.
 
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use chrono::{DateTime, Local, Timelike};
@@ -16,7 +17,7 @@ use crate::settings::{lang_code, Settings, SettingsManager};
 use crate::tts::service::{TtsEvent, TtsService};
 use crate::ui::clock::show_clock;
 use crate::ui::icons::{icon_button, IconKind};
-use crate::ui::settings_dialog::SettingsDialog;
+use crate::ui::settings_dialog::{AssetDownloadStatus, SettingsDialog};
 
 const BG: Color32 = Color32::from_rgb(0x12, 0x12, 0x12);
 const BORDER: Color32 = Color32::from_rgb(0x44, 0x44, 0x44);
@@ -127,6 +128,7 @@ pub struct BitTalkerApp {
     current_hour: Option<u32>,
 
     dialog: Option<SettingsDialog>,
+    asset_download_status: Arc<Mutex<AssetDownloadStatus>>,
 
     // viewport commands deferred to the next update (sent after layout)
     pending_resize: Option<Vec2>,
@@ -176,8 +178,13 @@ impl BitTalkerApp {
         cc.egui_ctx.set_visuals(visuals);
 
         let ticker_mode = override_ticker_mode.unwrap_or(s.ticker_mode);
+        let asset_download_status = Arc::new(Mutex::new(AssetDownloadStatus::Idle));
         let dialog = if open_settings_dialog {
-            Some(SettingsDialog::open(&s, None))
+            Some(SettingsDialog::open_with_state(
+                &s,
+                None,
+                Some(Arc::clone(&asset_download_status)),
+            ))
         } else {
             None
         };
@@ -198,6 +205,7 @@ impl BitTalkerApp {
             status: Status::Connecting,
             current_hour: None,
             dialog,
+            asset_download_status,
             pending_resize: None,
             pending_level: None,
             screenshot_path,
@@ -354,7 +362,11 @@ impl BitTalkerApp {
         draft.always_on_top = self.always_on_top;
         draft.ticker_mode = self.ticker_mode;
         draft.interval = self.tracker.interval as i64;
-        self.dialog = Some(SettingsDialog::open(&draft, self.current_window_rect));
+        self.dialog = Some(SettingsDialog::open_with_state(
+            &draft,
+            self.current_window_rect,
+            Some(Arc::clone(&self.asset_download_status)),
+        ));
     }
 }
 

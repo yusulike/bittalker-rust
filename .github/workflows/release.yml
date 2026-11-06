@@ -6,6 +6,10 @@ on:
       - 'v*'
   workflow_dispatch:
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -29,8 +33,10 @@ jobs:
         run: |
           .\scripts\package.ps1
 
-      - name: Upload Release Asset
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/bittalker-windows-x64.zip
+          files: |
+            dist/bittalker-windows-x64.zip
+            dist/bittalker-windows-x64-full.zip
           generate_release_notes: true

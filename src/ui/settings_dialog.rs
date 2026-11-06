@@ -2,9 +2,27 @@
 //! language / interval / voice pickers, always-on-top and ticker-mode
 //! checkboxes, a Test Voice button and OK / Cancel.
 
+use std::sync::{Arc, Mutex};
+
 use egui::{Color32, ComboBox, Frame, Key, Margin, Ui, ViewportBuilder, ViewportId};
 
 use crate::settings::{available_languages, Settings, VOICES};
+
+pub const DIALOG_WIDTH: f32 = 330.0;
+pub const DIALOG_HEIGHT: f32 = 345.0;
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum AssetDownloadStatus {
+    Idle,
+    Downloading {
+        file_name: String,
+        current_file: usize,
+        total_files: usize,
+        progress: f32, // 0.0 ..= 1.0
+    },
+    Success,
+    Failed(String),
+}
 
 /// Draft settings shown while the dialog is open.
 pub struct SettingsDialog {
@@ -15,16 +33,23 @@ pub struct SettingsDialog {
     pub always_on_top: bool,
     pub ticker_mode: bool,
     pub initial_pos: Option<[f32; 2]>,
+    pub download_status: Arc<Mutex<AssetDownloadStatus>>,
 }
 
 impl SettingsDialog {
     pub fn open(current: &Settings, parent_rect: Option<egui::Rect>) -> Self {
+        Self::open_with_state(current, parent_rect, None)
+    }
+
+    pub fn open_with_state(
+        current: &Settings,
+        parent_rect: Option<egui::Rect>,
+        shared_download: Option<Arc<Mutex<AssetDownloadStatus>>>,
+    ) -> Self {
         let initial_pos = parent_rect.map(|rect| {
-            let dialog_w = 330.0;
-            let dialog_h = 270.0;
-            let x = rect.min.x + (rect.width() - dialog_w) / 2.0;
+            let x = rect.min.x + (rect.width() - DIALOG_WIDTH) / 2.0;
             let y = if rect.min.y > 450.0 {
-                (rect.min.y - dialog_h - 10.0).max(0.0)
+                (rect.min.y - DIALOG_HEIGHT - 10.0).max(0.0)
             } else {
                 rect.max.y + 10.0
             };
@@ -39,6 +64,8 @@ impl SettingsDialog {
             always_on_top: current.always_on_top,
             ticker_mode: current.ticker_mode,
             initial_pos,
+            download_status: shared_download
+                .unwrap_or_else(|| Arc::new(Mutex::new(AssetDownloadStatus::Idle))),
         }
     }
 
@@ -71,8 +98,8 @@ impl SettingsDialog {
 
         let mut builder = ViewportBuilder::default()
             .with_title("Settings")
-            .with_inner_size([330.0, 270.0])
-            .with_min_inner_size([300.0, 240.0])
+            .with_inner_size([DIALOG_WIDTH, DIALOG_HEIGHT])
+            .with_min_inner_size([300.0, 280.0])
             .with_resizable(false)
             .with_minimize_button(false)
             .with_maximize_button(false)
@@ -163,7 +190,7 @@ impl SettingsDialog {
                 ui.end_row();
             });
 
-        ui.add_space(10.0);
+        ui.add_space(8.0);
 
         // Test Voice button
         let test = ui.add_sized(
@@ -174,7 +201,15 @@ impl SettingsDialog {
             on_test_voice(&self.voice, &self.language);
         }
 
-        ui.add_space(10.0);
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(4.0);
+
+        self.render_assets_section(ui);
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(6.0);
 
         // OK / Cancel buttons (right-to-left puts Cancel right, OK left -> [OK] [Cancel])
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -185,6 +220,115 @@ impl SettingsDialog {
                 *result = Some(self.draft());
                 self.open = false;
             }
+        });
+    }
+
+    fn render_assets_section(&mut self, ui: &mut Ui) {
+        let assets_dir = crate::paths::assets_dir();
+        let assets_installed = crate::assets::verify_assets(&assets_dir).is_ok();
+
+        let current_status = {
+            if let Ok(guard) = self.download_status.lock() {
+                guard.clone()
+            } else {
+                AssetDownloadStatus::Idle
+            }
+        };
+
+        ui.horizontal(|ui| {
+            ui.label("Voice Models:");
+            if assets_installed {
+                ui.colored_label(Color32::from_rgb(0x00, 0xE6, 0x76), "✔ Installed");
+            } else {
+                ui.colored_label(Color32::from_rgb(0xFF, 0xAA, 0x00), "⚠ Not Installed");
+            }
+        });
+
+        match current_status {
+            AssetDownloadStatus::Idle => {
+                let btn_text = if assets_installed {
+                    "Re-download Models (~70MB)"
+                } else {
+                    "⬇ Download Models (~70MB)"
+                };
+                if ui.add_sized([ui.available_width(), 24.0], egui::Button::new(btn_text)).clicked() {
+                    self.start_download(ui.ctx().clone());
+                }
+            }
+            AssetDownloadStatus::Downloading {
+                file_name,
+                current_file,
+                total_files,
+                progress,
+            } => {
+                let overall = ((current_file.saturating_sub(1) as f32 + progress)
+                    / total_files.max(1) as f32)
+                    .clamp(0.0, 1.0);
+                ui.add(
+                    egui::ProgressBar::new(overall)
+                        .show_percentage()
+                        .animate(true),
+                );
+                ui.label(
+                    egui::RichText::new(format!(
+                        "[{}/{}] {}",
+                        current_file, total_files, file_name
+                    ))
+                    .size(11.0)
+                    .color(Color32::GRAY),
+                );
+            }
+            AssetDownloadStatus::Success => {
+                ui.horizontal(|ui| {
+                    ui.colored_label(
+                        Color32::from_rgb(0x00, 0xE6, 0x76),
+                        "✔ Download Complete!",
+                    );
+                    if ui.button("Re-download").clicked() {
+                        self.start_download(ui.ctx().clone());
+                    }
+                });
+            }
+            AssetDownloadStatus::Failed(err) => {
+                ui.colored_label(Color32::from_rgb(0xFF, 0x55, 0x55), format!("Error: {err}"));
+                if ui.button("Retry Download").clicked() {
+                    self.start_download(ui.ctx().clone());
+                }
+            }
+        }
+    }
+
+    fn start_download(&self, ctx: egui::Context) {
+        let status_lock = Arc::clone(&self.download_status);
+        if let Ok(mut st) = status_lock.lock() {
+            *st = AssetDownloadStatus::Downloading {
+                file_name: "Connecting...".to_string(),
+                current_file: 0,
+                total_files: crate::assets::REQUIRED_FILES.len(),
+                progress: 0.0,
+            };
+        }
+        let assets_dir = crate::paths::assets_dir();
+        std::thread::spawn(move || {
+            let res = crate::assets::download_all_with_progress(&assets_dir, |name, idx, total, pct| {
+                if let Ok(mut st) = status_lock.lock() {
+                    *st = AssetDownloadStatus::Downloading {
+                        file_name: name.to_string(),
+                        current_file: idx,
+                        total_files: total,
+                        progress: pct,
+                    };
+                }
+                ctx.request_repaint();
+            });
+
+            if let Ok(mut st) = status_lock.lock() {
+                match res {
+                    Ok(()) => *st = AssetDownloadStatus::Success,
+                    Err(e) => *st = AssetDownloadStatus::Failed(e.to_string()),
+                }
+            }
+            ctx.request_repaint();
         });
     }
 }
@@ -239,8 +383,8 @@ mod tests {
         let dlg_top = SettingsDialog::open(&s, Some(top_rect));
         assert!(dlg_top.initial_pos.is_some());
         let [x, y] = dlg_top.initial_pos.unwrap();
-        // Centered horizontally: 200 + (520 - 330)/2 = 295
-        assert_eq!(x, 295.0);
+        // Centered horizontally: 200 + (520 - DIALOG_WIDTH)/2
+        assert_eq!(x, 200.0 + (520.0 - DIALOG_WIDTH) / 2.0);
         // Opens 10px below: 100 + 100 + 10 = 210
         assert_eq!(y, 210.0);
 
@@ -248,7 +392,7 @@ mod tests {
         let btm_rect = egui::Rect::from_min_size(egui::pos2(200.0, 600.0), egui::vec2(520.0, 100.0));
         let dlg_btm = SettingsDialog::open(&s, Some(btm_rect));
         let [_, y_btm] = dlg_btm.initial_pos.unwrap();
-        // Opens 10px above: 600 - 270 - 10 = 320
-        assert_eq!(y_btm, 320.0);
+        // Opens 10px above: 600 - DIALOG_HEIGHT - 10
+        assert_eq!(y_btm, 600.0 - DIALOG_HEIGHT - 10.0);
     }
 }
