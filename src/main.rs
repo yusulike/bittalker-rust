@@ -51,7 +51,7 @@ fn main() -> eframe::Result<()> {
                     viewport: egui::ViewportBuilder::default()
                         .with_decorations(false)
                         .with_transparent(true)
-                        .with_inner_size(egui::vec2(520.0, 100.0)),
+                        .with_inner_size(egui::vec2(375.0, 64.0)),
                     ..Default::default()
                 };
                 return eframe::run_native(
@@ -86,7 +86,7 @@ fn main() -> eframe::Result<()> {
                     viewport: egui::ViewportBuilder::default()
                         .with_decorations(false)
                         .with_transparent(true)
-                        .with_inner_size(egui::vec2(520.0, 100.0)),
+                        .with_inner_size(egui::vec2(375.0, 64.0)),
                     ..Default::default()
                 };
                 return eframe::run_native(
@@ -143,7 +143,7 @@ fn main() -> eframe::Result<()> {
         .with_inner_size(if s.ticker_mode {
             egui::vec2(540.0, 45.0)
         } else {
-            egui::vec2(520.0, 100.0)
+            egui::vec2(375.0, 64.0)
         })
         .with_min_inner_size(egui::vec2(320.0, 40.0));
     if let Some(icon) = app_icon() {
