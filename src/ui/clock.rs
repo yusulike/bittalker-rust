@@ -20,8 +20,9 @@ pub const CLOCK_HEIGHT: f32 = 82.0;
 pub const CLOCK_ROW_GAP_Y: f32 = 5.0;
 
 /// Side Column (AM/PM + Weather) Layout
-pub const SIDE_COLUMN_TOP_PAD: f32 = 7.0; // 상단 여백 (값을 늘리면 전체가 아래로 내려옵니다)
-pub const SIDE_COLUMN_ROW_GAP: f32 = 6.0; // AM/PM - 날씨 아이콘 - 기온 사이의 수직 간격
+pub const SIDE_COLUMN_TOP_PAD: f32 = 4.0; // 상단 여백 (값을 늘리면 전체가 아래로 내려옵니다)
+pub const AMPM_WEATHER_GAP_Y: f32 = 8.0; // AM/PM과 날씨 아이콘 사이의 간격
+pub const WEATHER_TEMP_GAP_Y: f32 = 4.0; // 날씨 아이콘과 기온 사이의 수직 간격
 pub const SIDE_COLUMN_FALLBACK_PAD: f32 = 24.0; // 날씨 데이터가 없을 때 AM/PM 상단 여백
 pub const WEATHER_ICON_SIZE: f32 = 16.0; // 날씨 아이콘 크기
 pub const AMPM_FONT_SIZE: f32 = 14.0; // AM/PM 폰트 크기
@@ -50,7 +51,6 @@ pub fn show_clock(ui: &mut Ui, now: DateTime<Local>, weather: Option<&WeatherInf
                     |ui| {
                         if weather.is_some() {
                             ui.add_space(SIDE_COLUMN_TOP_PAD);
-                            ui.spacing_mut().item_spacing.y = SIDE_COLUMN_ROW_GAP;
                         } else {
                             ui.add_space(SIDE_COLUMN_FALLBACK_PAD);
                         }
@@ -68,6 +68,9 @@ pub fn show_clock(ui: &mut Ui, now: DateTime<Local>, weather: Option<&WeatherInf
 
                         // Row 2 & 3: Weather Icon & Temperature
                         if let Some(w) = weather {
+                            ui.add_space(AMPM_WEATHER_GAP_Y);
+                            ui.spacing_mut().item_spacing.y = WEATHER_TEMP_GAP_Y;
+
                             let tooltip_text = format!(
                                 "{}: {} ({:.1}°C)",
                                 w.location_name,
