@@ -135,6 +135,8 @@ pub struct BitTalkerApp {
 
     current_window_rect: Option<egui::Rect>,
     pending_initial_pos: Option<[f32; 2]>,
+    button_rects: Vec<egui::Rect>,
+    button_hovered: bool,
 }
 
 impl BitTalkerApp {
@@ -200,6 +202,8 @@ impl BitTalkerApp {
             screenshot_frames: 0,
             current_window_rect: None,
             pending_initial_pos: s.window_pos,
+            button_rects: Vec::new(),
+            button_hovered: false,
         }
     }
 
@@ -395,23 +399,36 @@ impl eframe::App for BitTalkerApp {
             });
 
         egui::CentralPanel::default().frame(frame).show(ui, |ui| {
-            // Background drag region, registered first so real widgets
-            // (buttons) stay on top for hit-testing
-            let bg_rect = ui.max_rect();
-            let drag = ui.interact(bg_rect, egui::Id::unique("window-drag"), Sense::drag());
-            if drag.drag_started() {
-                ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
-            }
-            if drag.drag_stopped() {
-                self.save_window_pos();
-            }
-
             if self.ticker_mode {
                 self.ticker_layout(ui, now);
             } else {
                 self.normal_layout(ui, now);
             }
         });
+
+        // Window drag handling: any area outside buttons initiates window drag
+        let (pointer_pos, pressed, dragging, released) = ctx.input(|i| {
+            (
+                i.pointer.interact_pos(),
+                i.pointer.primary_pressed(),
+                i.pointer.is_decidedly_dragging(),
+                i.pointer.primary_released(),
+            )
+        });
+
+        if released {
+            self.save_window_pos();
+        }
+
+        let is_over_button = if let Some(pos) = pointer_pos {
+            self.button_hovered || self.button_rects.iter().any(|r| r.contains(pos))
+        } else {
+            self.button_hovered
+        };
+
+        if !is_over_button && (pressed || dragging) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
+        }
 
         // Settings dialog (taken out of self so the test-voice callback can
         // borrow the app)
@@ -537,7 +554,7 @@ impl BitTalkerApp {
         } else {
             BUTTON_SIZE_NORMAL
         };
-        if icon_button(
+        let r_mute = icon_button(
             ui,
             egui::Id::unique("mute"),
             IconKind::Speaker {
@@ -545,34 +562,39 @@ impl BitTalkerApp {
             },
             "Mute/Unmute TTS",
             size,
-        )
-        .clicked()
-        {
+        );
+        if r_mute.clicked() {
             self.toggle_mute();
         }
-        if icon_button(
+        let r_settings = icon_button(
             ui,
             egui::Id::unique("settings"),
             IconKind::Gear,
             "Settings",
             size,
-        )
-        .clicked()
-        {
+        );
+        if r_settings.clicked() {
             self.open_settings();
         }
-        if icon_button(
+        let r_close = icon_button(
             ui,
             egui::Id::unique("close"),
             IconKind::Close,
             "Close",
             size,
-        )
-        .clicked()
-        {
+        );
+        if r_close.clicked() {
             self.save_window_pos();
             ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
         }
+
+        self.button_hovered = r_mute.hovered()
+            || r_settings.hovered()
+            || r_close.hovered()
+            || r_mute.is_pointer_button_down_on()
+            || r_settings.is_pointer_button_down_on()
+            || r_close.is_pointer_button_down_on();
+        self.button_rects = vec![r_mute.rect, r_settings.rect, r_close.rect];
     }
 
     /// TICKER MODE: single-line layout `price ▲ | 12:00:00 PM Thu, Nov 06 | btn btn ✕`
