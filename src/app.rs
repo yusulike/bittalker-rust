@@ -266,7 +266,7 @@ impl BitTalkerApp {
             self.pending_resize = Some(if self.ticker_mode {
                 Vec2::new(540.0, 45.0)
             } else {
-                Vec2::new(375.0, 64.0)
+                Vec2::new(520.0, 100.0)
             });
         }
 
@@ -311,7 +311,7 @@ impl eframe::App for BitTalkerApp {
             let (w, h) = if self.ticker_mode {
                 (540.0, 45.0)
             } else {
-                (375.0, 64.0)
+                (520.0, 100.0)
             };
             crate::ui::window_manager::platform::set_physical_window_pos(pos, w, h);
         }
@@ -339,11 +339,11 @@ impl eframe::App for BitTalkerApp {
         let frame = egui::Frame::NONE
             .fill(BG)
             .stroke(Stroke::new(1.0, BORDER))
-            .corner_radius(CornerRadius::same(10))
+            .corner_radius(CornerRadius::same(12))
             .inner_margin(if self.ticker_mode {
                 egui::Margin::symmetric(10, 2)
             } else {
-                egui::Margin::symmetric(7, 4)
+                egui::Margin::symmetric(6, 4)
             });
 
         egui::CentralPanel::default()
@@ -452,19 +452,19 @@ impl BitTalkerApp {
         let color = self.status.color();
         let galley = ui
             .painter()
-            .layout_no_wrap(self.status.text().to_string(), FontId::proportional(10.0), color);
-        let pad = Vec2::new(6.0, 1.5);
-        let size = galley.size() + pad * 2.0;
+            .layout_no_wrap(self.status.text().to_string(), FontId::proportional(11.0), color);
+        let pad = Vec2::new(8.0, 2.0);
+        let size = galley.size() + pad * 2.0 + Vec2::new(2.0, 2.0);
         let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, CornerRadius::same(4), Color32::from_rgb(0x1e, 0x1e, 0x1e));
-        painter.rect_stroke(rect, CornerRadius::same(4), Stroke::new(1.0, color), egui::StrokeKind::Inside);
-        let pos = rect.left_top() + pad;
+        painter.rect_filled(rect, CornerRadius::same(10), Color32::from_rgb(0x22, 0x22, 0x22));
+        painter.rect_stroke(rect, CornerRadius::same(10), Stroke::new(1.0, color), egui::StrokeKind::Inside);
+        let pos = rect.left_top() + pad + Vec2::new(1.0, 1.0);
         painter.galley(pos, galley, color);
     }
 
     fn buttons(&mut self, ui: &mut egui::Ui, small: bool) {
-        let size = if small { Vec2::new(22.0, 18.0) } else { Vec2::new(24.0, 18.0) };
+        let size = if small { Vec2::new(26.0, 20.0) } else { Vec2::new(28.0, 22.0) };
         if icon_button(
             ui,
             egui::Id::unique("mute"),
@@ -515,36 +515,37 @@ impl BitTalkerApp {
         });
     }
 
-    /// NORMAL MODE: compact clock | price + info rows
+    /// NORMAL MODE: clock | price + info rows
     fn normal_layout(&mut self, ui: &mut egui::Ui, now: DateTime<Local>) {
         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 8.0;
+            ui.spacing_mut().item_spacing.x = 10.0;
 
-            // Left: compact clock
+            // Left: clock (vertically centered)
             show_clock(ui, now);
 
-            vseparator(ui, 46.0);
+            vseparator(ui, 76.0);
 
-            // Right: price + info
+            // Right: price + info (vertically centered, fills remaining space)
             let right_width = ui.available_width();
             ui.allocate_ui_with_layout(
-                Vec2::new(right_width, 54.0),
-                egui::Layout::top_down(egui::Align::Min),
+                Vec2::new(right_width, 80.0),
+                egui::Layout::top_down(egui::Align::Center),
                 |ui| {
-                    ui.spacing_mut().item_spacing.y = 2.0;
+                    ui.spacing_mut().item_spacing.y = 4.0;
+                    ui.add_space(6.0);
 
-                    // Price row
+                    // Price row (centered)
                     ui.horizontal(|ui| {
                         ui.spacing_mut().item_spacing.x = 4.0;
-                        self.price_label(ui, 24.0);
-                        self.indicator_label(ui, 15.0);
+                        self.price_label(ui, 32.0);
+                        self.indicator_label(ui, 20.0);
                     });
 
-                    // Info row (status + buttons)
+                    // Info row (status + buttons, centered)
                     ui.horizontal(|ui| {
                         ui.spacing_mut().item_spacing.x = 6.0;
                         self.status_pill(ui);
-                        self.buttons(ui, true);
+                        self.buttons(ui, false);
                     });
                 },
             );
@@ -586,44 +587,32 @@ fn thousands(n: i64) -> String {
 
 fn install_fonts(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
-    let mut installed_mono = Vec::new();
-    let mut installed_prop = Vec::new();
+    let mut installed = Vec::new();
 
-    // High quality modern font priority:
-    // 1. Bahnschrift (crisp German DIN 1451 geometric numerals for price & clock)
-    // 2. Segoe UI Bold / Segoe UI (clean modern typography)
-    // 3. Malgun Gothic (Korean typography fallback)
-    // 4. Segoe UI Symbol (icons/symbols)
-    let candidates: &[(&str, &str, bool, bool)] = &[
-        ("bahnschrift", "C:\\Windows\\Fonts\\bahnschrift.ttf", true, false),
-        ("segoe_bold", "C:\\Windows\\Fonts\\segoeuib.ttf", false, true),
-        ("segoe", "C:\\Windows\\Fonts\\segoeui.ttf", false, true),
-        ("malgun_bold", "C:\\Windows\\Fonts\\malgunbd.ttf", true, true),
-        ("malgun", "C:\\Windows\\Fonts\\malgun.ttf", true, true),
-        ("segoe_symbol", "C:\\Windows\\Fonts\\seguisym.ttf", true, true),
+    // Korean text needs Malgun Gothic; symbols benefit from Segoe UI Symbol
+    let candidates: &[(&str, &str)] = &[
+        ("arial_bold", "C:\\Windows\\Fonts\\arialbd.ttf"),
+        ("malgun_bold", "C:\\Windows\\Fonts\\malgunbd.ttf"),
+        ("malgun", "C:\\Windows\\Fonts\\malgun.ttf"),
+        ("segoe_symbol", "C:\\Windows\\Fonts\\seguisym.ttf"),
     ];
-    for &(name, path, is_mono, is_prop) in candidates {
+    for (name, path) in candidates {
         if let Ok(bytes) = std::fs::read(path) {
             fonts
                 .font_data
                 .insert(name.to_string(), std::sync::Arc::new(egui::FontData::from_owned(bytes)));
-            if is_prop {
-                installed_prop.push(name.to_string());
-            }
-            if is_mono {
-                installed_mono.push(name.to_string());
-            }
+            installed.push(name.to_string());
         }
     }
 
     if let Some(list) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
-        for name in installed_prop.iter().rev() {
+        for name in installed.iter().rev() {
             list.insert(0, name.clone());
         }
     }
     if let Some(list) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
-        for name in installed_mono.iter().rev() {
-            list.insert(0, name.clone());
+        for name in &installed {
+            list.push(name.clone());
         }
     }
     ctx.set_fonts(fonts);
