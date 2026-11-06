@@ -81,7 +81,7 @@ if (Test-Path $releaseAssets) {
 }
 
 # Create README for end-users
-@"
+@'
 BitTalker (Rust) - Real-time Bitcoin Price Monitor with Voice Alerts
 
 Directory Structure:
@@ -93,7 +93,7 @@ How to run:
   Double-click `bittalker.exe` to run.
   If assets are missing or corrupted, run:
     bittalker.exe --download-assets
-"@ | Set-Content -Path (Join-Path $bundleDir "README.txt") -Encoding UTF8
+'@ | Set-Content -Path (Join-Path $bundleDir "README.txt") -Encoding UTF8
 
 # Compress to ZIP
 $zipPath = Join-Path $distDir "$bundleName.zip"
