@@ -36,11 +36,14 @@ pub fn show_clock(ui: &mut Ui, now: DateTime<Local>) {
                     Vec2::new(30.0, PANEL_SIZE),
                     egui::Layout::left_to_right(egui::Align::Center),
                     |ui| {
-                        ui.label(
-                            RichText::new(ampm)
-                                .color(Color32::WHITE)
-                                .font(FontId::proportional(14.0))
-                                .strong(),
+                        ui.add(
+                            egui::Label::new(
+                                RichText::new(ampm)
+                                    .color(Color32::WHITE)
+                                    .font(FontId::proportional(14.0))
+                                    .strong(),
+                            )
+                            .selectable(false),
                         );
                     },
                 );
@@ -54,10 +57,13 @@ pub fn show_clock(ui: &mut Ui, now: DateTime<Local>) {
                 now.day(),
                 now.year()
             );
-            ui.label(
-                RichText::new(date)
-                    .color(DATE_TEXT)
-                    .font(FontId::proportional(13.0)),
+            ui.add(
+                egui::Label::new(
+                    RichText::new(date)
+                        .color(DATE_TEXT)
+                        .font(FontId::proportional(13.0)),
+                )
+                .selectable(false),
             );
         },
     );

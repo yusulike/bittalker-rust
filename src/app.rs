@@ -497,7 +497,7 @@ impl BitTalkerApp {
             .color(GREEN)
             .font(FontId::monospace(font_size))
             .strong();
-        ui.label(text)
+        ui.add(egui::Label::new(text).selectable(false))
     }
 
     /// Direction indicator with a fixed width so the layout never shifts.
@@ -609,15 +609,21 @@ impl BitTalkerApp {
             vseparator(ui, TICKER_SEPARATOR_HEIGHT);
 
             // Time and Date (horizontal, side by side)
-            ui.label(
-                RichText::new(now.format("%I:%M:%S %p").to_string())
-                    .color(Color32::WHITE)
-                    .font(FontId::monospace(TICKER_TIME_FONT_SIZE)),
+            ui.add(
+                egui::Label::new(
+                    RichText::new(now.format("%I:%M:%S %p").to_string())
+                        .color(Color32::WHITE)
+                        .font(FontId::monospace(TICKER_TIME_FONT_SIZE)),
+                )
+                .selectable(false),
             );
-            ui.label(
-                RichText::new(now.format("%a, %b %d").to_string())
-                    .color(DATE_TEXT)
-                    .font(FontId::proportional(TICKER_DATE_FONT_SIZE)),
+            ui.add(
+                egui::Label::new(
+                    RichText::new(now.format("%a, %b %d").to_string())
+                        .color(DATE_TEXT)
+                        .font(FontId::proportional(TICKER_DATE_FONT_SIZE)),
+                )
+                .selectable(false),
             );
 
             vseparator(ui, TICKER_SEPARATOR_HEIGHT);
