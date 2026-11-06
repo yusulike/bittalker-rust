@@ -264,9 +264,9 @@ impl BitTalkerApp {
         if new.ticker_mode != self.ticker_mode {
             self.ticker_mode = new.ticker_mode;
             self.pending_resize = Some(if self.ticker_mode {
-                Vec2::new(540.0, 45.0)
+                Vec2::new(460.0, 45.0)
             } else {
-                Vec2::new(520.0, 100.0)
+                Vec2::new(460.0, 100.0)
             });
         }
 
@@ -309,9 +309,9 @@ impl eframe::App for BitTalkerApp {
 
         if let Some(pos) = self.pending_initial_pos.take() {
             let (w, h) = if self.ticker_mode {
-                (540.0, 45.0)
+                (460.0, 45.0)
             } else {
-                (520.0, 100.0)
+                (460.0, 100.0)
             };
             crate::ui::window_manager::platform::set_physical_window_pos(pos, w, h);
         }
@@ -438,7 +438,8 @@ impl BitTalkerApp {
             Some(Direction::Down) => ("▼", RED),
             None => ("", GREEN),
         };
-        let (rect, _) = ui.allocate_exact_size(Vec2::new(25.0, font_size), Sense::hover());
+        let width = if font_size < 16.0 { 16.0 } else { 20.0 };
+        let (rect, _) = ui.allocate_exact_size(Vec2::new(width, font_size), Sense::hover());
         ui.painter().text(
             rect.left_center(),
             egui::Align2::LEFT_CENTER,
@@ -488,7 +489,7 @@ impl BitTalkerApp {
     /// TICKER MODE: single-line layout `price ▲ | 12:00:00 PM Thu, Nov 06 | btn btn ✕`
     fn ticker_layout(&mut self, ui: &mut egui::Ui, now: DateTime<Local>) {
         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 10.0;
+            ui.spacing_mut().item_spacing.x = 8.0;
 
             // Price with indicator
             self.price_label(ui, 18.0);
@@ -518,7 +519,7 @@ impl BitTalkerApp {
     /// NORMAL MODE: clock | price + info rows
     fn normal_layout(&mut self, ui: &mut egui::Ui, now: DateTime<Local>) {
         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 10.0;
+            ui.spacing_mut().item_spacing.x = 8.0;
 
             // Left: clock (vertically centered)
             show_clock(ui, now);
