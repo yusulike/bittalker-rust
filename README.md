@@ -1,6 +1,6 @@
 # BitTalker (Rust)
 
-A lightweight, high-performance real-time Bitcoin (BTC/USDT) desktop price monitor and voice alert application written in Rust, ported from the original Python implementation.
+A lightweight, high-performance real-time Bitcoin (BTC/USDT) desktop price monitor and voice alert application written in Rust, ported from the original Python implementation ([yusulike/bittalker](https://github.com/yusulike/bittalker)).
 
 [한국어 문서 (README.ko.md)](README.ko.md)
 
@@ -124,4 +124,10 @@ The script packages `target/release/bittalker.exe`, `onnxruntime.dll`, `download
 
 ## Acknowledgments & Porting Note
 
-This software was ported from the original Python project **BitTalker** (`PyQt6` + Python `onnxruntime`). The Rust version achieves complete functional parity, improved memory efficiency, lower CPU usage, and eliminates all external runtime dependencies.
+This software was ported from the original Python project [yusulike/bittalker](https://github.com/yusulike/bittalker) (`PyQt6` + Python `onnxruntime`). The Rust version achieves complete functional parity, improved memory efficiency, lower CPU usage, and eliminates all external runtime dependencies.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

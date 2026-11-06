@@ -1,6 +1,6 @@
 # BitTalker (Rust)
 
-Python으로 구현되었던 실시간 바이낸스 비트코인(BTC/USDT) 시세 모니터 및 음성 알림 데스크톱 애플리케이션의 **순수 Rust 포팅 버전**입니다.
+Python으로 구현되었던 실시간 바이낸스 비트코인(BTC/USDT) 시세 모니터 및 음성 알림 데스크톱 애플리케이션([yusulike/bittalker](https://github.com/yusulike/bittalker))의 **순수 Rust 포팅 버전**입니다.
 
 [English Documentation (README.md)](README.md)
 
@@ -124,4 +124,10 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1
 
 ## 원본 프로젝트 및 포팅 정보
 
-본 프로젝트는 원본 Python 버전 **BitTalker**(`PyQt6` + Python `onnxruntime`)의 모든 UI 및 비즈니스 로직을 Rust로 완전히 포팅한 것입니다. 성능 및 메모리 효율성을 크게 개선하고 외부 의존성을 제거하였습니다.
+본 프로젝트는 원본 Python 버전 [yusulike/bittalker](https://github.com/yusulike/bittalker)(`PyQt6` + Python `onnxruntime`)의 모든 UI 및 비즈니스 로직을 Rust로 완전히 포팅한 것입니다. 성능 및 메모리 효율성을 크게 개선하고 외부 의존성을 제거하였습니다.
+
+---
+
+## 라이센스 (License)
+
+본 프로젝트는 MIT 라이센스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
