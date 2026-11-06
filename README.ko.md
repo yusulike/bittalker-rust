@@ -129,7 +129,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1
 
 ## References
 
-- [Supertonic](https://github.com/supertone-inc/supertonic)
+- TTS Model: [supertonic](https://github.com/supertone-inc/supertonic)
 
 ---
 

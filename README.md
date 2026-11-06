@@ -129,7 +129,7 @@ The script packages `target/release/bittalker.exe`, `onnxruntime.dll`, `download
 
 ## References
 
-- [Supertonic](https://github.com/supertone-inc/supertonic)
+- TTS Model: [supertonic](https://github.com/supertone-inc/supertonic)
 
 ---
 
